@@ -25,9 +25,9 @@ module module_radiance
          rttov_radiance,     &
          rttov_chanprof,    &
          rttov_emissivity，  &
-		 rttov_options_scatt, &               
-		 rttov_scatt_coef,    &               
-		 rttov_profile_cloud, &
+         rttov_options_scatt, &               
+	 rttov_scatt_coef,    &               
+	 rttov_profile_cloud, &
    use parkind1, only : jpim, jprb
    use mod_rttov_emis_atlas, only : &
          rttov_emis_atlas_data, &
