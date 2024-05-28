@@ -24,7 +24,10 @@ module module_radiance
          rttov_transmission, &
          rttov_radiance,     &
          rttov_chanprof,    &
-         rttov_emissivity
+         rttov_emissivity，  &
+		 rttov_options_scatt, &               
+		 rttov_scatt_coef,    &               
+		 rttov_profile_cloud, &
    use parkind1, only : jpim, jprb
    use mod_rttov_emis_atlas, only : &
          rttov_emis_atlas_data, &
@@ -154,6 +157,8 @@ module module_radiance
    type (rttov_opts_rt_ir), allocatable :: opts_rt_ir(:) ! options structure
    type (rttov_emis_atlas_data) :: atlas
    integer(jpim), allocatable :: atlas_type(:), atlas_id(:)
+   type (rttov_scatt_coef), allocatable :: coefs_scatt(:)   ! scatt_coefficients structure
+   type (rttov_options_scatt),allocatable :: opts_scatt(:)  ! scatt_options structure
 #endif
 
    type satinfo_type
