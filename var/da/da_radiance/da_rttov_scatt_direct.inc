@@ -1,10 +1,10 @@
-#ifdef RTTOV
-subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
+#ifdef RTTOV_SCATT
+subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
                           con_vars, aux_vars, con_cld_vars& 
                           tb, rad_xb, rad_ovc, emissivity)! 增加了额外的云雨背景场变量con_cld_vars
 
    !---------------------------------------------------------------------------
-   !  PURPOSE: interface to the forward subroutine of RTTOV
+   !  PURPOSE: interface to the forward subroutine of RTTOV_SCATT
    !---------------------------------------------------------------------------
    implicit none
 
@@ -60,9 +60,9 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
    !为channel_list赋值,channel_list是一个由1到nchannel的数字列表
    !channel_list=[(i,i=1,nchanl)]
    
-   !allocate(use_chan(nprof,coefs%coef%fmv_chn), frequencies(nchanprof))
-   ! Set use_chan to .TRUE. only for required channels
-   !use_chan(:,:) = .FALSE.
+   allocate(use_chan(nprof,coefs%coef%fmv_chn), frequencies(nchanprof))
+   !Set use_chan to .TRUE. only for required channels
+   use_chan(:,:) = .FALSE.
    do j = 1, nprofiles
      use_chan(j,channel_list(1:nchanl)) = .TRUE.  
    end do
@@ -74,7 +74,7 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
        nchanprof,          &
        chanprof,           &
        frequencies,        &
-    !  use_chan,           &           !由于不确定wrfda自身对选定通道编排索引的方式，usechan选项暂时不使用
+      use_chan,            &         
 	)
 
    !---------------------------为SCATT_forward模式中的参数的分配内存--------------------
@@ -139,7 +139,7 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
 	 !Surface variables
 	  profiles(iprof) % skin % t            = aux_vars (iprof) % surft
 	  profiles(iprof) % skin % surftype = aux_vars(iprof) % surftype       !land = 0, sea = 1,seaice = 2
-	  profiles(iprof) % skin % salinity = aux_vars(iprof) % salinity       !原始wrfda中没有此变量，需要额外定义
+	  profiles(iprof) % skin % salinity = aux_vars(iprof) % salinity       !FASTEM4-6需要的变量，原始wrfda中没有此变量，需要额外定义
 	 
 	 ! for microwave channels, land/sea-ce emissivity is computed
      ! from coefs in prof%skin%fastem, if calcemis = True
@@ -172,9 +172,8 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
 
 
 
-   allocate (calcemis(nchanprof), stat = alloc_status(3))
-   emissivity(:) % emis_in = 0
-   ! 当输入的emissivity值小于等于0时，计算相应的发射率值
+   allocate (calcemis(nchanprof), stat = alloc_status)
+   !当输入的emissivity值小于等于0时，计算相应的发射率值，在opt%rt_mw%fastem_version中可以选定发射率计算模型，默认为FASTEM6
    calcemis(:) = (emissivity(:)%emis_in <= 0)
 
    !-----------------------------------
