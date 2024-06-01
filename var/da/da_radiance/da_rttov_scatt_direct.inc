@@ -21,9 +21,9 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    ! local variables
    integer             :: nchanprof, asw
    integer             :: n, i, j, k,ilev,iprof              !由于scatt_forward需要读取每条廓线的压力层数据(full\half pressure level)，额外定义ilev\iprof
-   integer             :: alloc_status
+   integer             :: alloc_status(3)
    integer(KIND=jpim), pointer :: frequencies(:) => NULL()   !定义频率
-   logical(KIND=jplm) :: use_totalice, mmr_snowrain
+   logical             :: use_totalice, mmr_snowrain
    ! RTTOV input parameters
    type (rttov_chanprof),      allocatable :: chanprof(:)    !定义要模拟的通道/廓线索引
    type (rttov_profile),       allocatable :: profiles(:) 
@@ -39,7 +39,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    alloc_status (:) = 0
    nchanprof = nchanl*nprofiles                             
    !Allocate the RTTOV-SCATT cloud profiles structure
-   allocate(cld_profiles(nprof), stat=alloc_status)
+   allocate(cld_profiles(nprof), stat=alloc_status(1))
    ! 将原本的rttov_alloc_prof替换成了对应的rttov_alloc_scatt_prof并增加对应变量
    call rttov_alloc_scatt_prof(  &
       & errorstatus,             &
@@ -50,7 +50,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
       & asw=1,                   & ! Switch (1=allocate; 0=deallocate)
       & init = .true.,           & 
 	  & mmr_snowrain =.false. )    ! snow/rain input units: false => kg/m2/s; true => kg/kg
-   if ( errorstatus /= errorstatus_success .or. alloc_status /= 0 ) then
+   if ( errorstatus /= errorstatus_success .or. alloc_status(1) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"scatt_profile allocation error"/))
    end if
@@ -70,7 +70,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
     call rttov_scatt_setupindex ( &
        nprofiles,          &
        nchanl,             &           !读取通道数
-       coefs,              &
+       coefs(inst),        &
        nchanprof,          &
        chanprof,           &
        frequencies,        &
@@ -172,7 +172,11 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 
 
 
-   allocate (calcemis(nchanprof), stat = alloc_status)
+   allocate (calcemis(nchanprof), stat = alloc_status(2))
+   if (alloc_status(2) /= 0) then
+         call da_error(__FILE__,__LINE__, &
+        (/"calemis allocation error"/))
+   end if
    !当输入的emissivity值小于等于0时，计算相应的发射率值，在opt%rt_mw%fastem_version中可以选定发射率计算模型，默认为FASTEM6
    calcemis(:) = (emissivity(:)%emis_in <= 0)
 
@@ -231,9 +235,9 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    end do
 
    ! deallocate profile arrays
-   deallocate (frequencies, stat=alloc_status)
+   deallocate (frequencies, stat=alloc_status(3))
    call rttov_alloc_scatt_prof (errorstatus,asw=0,nprofiles,cld_profiles,nlevels)
-   if ( errorstatus /= errorstatus_success ) then
+   if ( errorstatus /= errorstatus_success or alloc_status(3) /= 0) then
       call da_error(__FILE__,__LINE__, &
         (/"scatt_profile deallocation error"/))
    end if	
@@ -255,5 +259,5 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
      WRITE(*,*) 'deallocation error for rttov_direct structures'
    end
    
-end subroutine da_rttov_direct
+end subroutine da_rttov_scatt_direct
 #endif
