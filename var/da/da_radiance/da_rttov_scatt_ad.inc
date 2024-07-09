@@ -152,7 +152,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    do iprof = 1, nprofiles
       do ilev = 1,nlevels
 	     if (use_totalice = .true.) then !使用totalice
-	         profiles(iprof)     % p   (ilev)     = con_cld_vars(iprof)%p       (ilev) ! full level pressure (hPa)
+	         profiles(iprof)     % p   (ilev)     = coefs(inst)%coef%ref_prfl_p(:)       (ilev) ! full level pressure (hPa)
 		     cld_profiles(iprof) % ph  (ilev)     = con_cld_vars(iprof)%ph      (ilev) ! half level pressure (hPa)
 		     profiles(iprof)     % t   (ilev)     = con_cld_vars(iprof)%t       (ilev) ! temperature (K)
 		     profiles(iprof)     % q   (ilev)     = con_vars(iprof)%q           (ilev) ! specific humility
