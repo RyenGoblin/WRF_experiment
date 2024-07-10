@@ -93,7 +93,7 @@ module da_radiance
 #ifdef RTTOV
    use da_rttov, only : da_rttov_init, da_get_innov_vector_rttov 
    #ifdef RTTOV_SCATT
-      use da_rttov_scatt, only : da_rttov_scatt_init,da_get_innov_vector_rttov
+      use da_rttov_scatt, only : da_rttov_scatt_init,da_get_innov_vector_rttov_scatt
    #endif
 #endif
    use da_statistics, only : da_stats_calculate
@@ -157,6 +157,7 @@ contains
 #include "da_read_pseudo_rad.inc"
 #include "da_blacklist_rad.inc"
 #include "da_deallocate_radiance.inc"
+#include "da_calc_hydrotable.inc"
 
 #endif
 
