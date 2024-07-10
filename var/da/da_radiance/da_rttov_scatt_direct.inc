@@ -28,6 +28,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    type (rttov_chanprof),      allocatable :: chanprof(:)    !定义要模拟的通道/廓线索引
    type (rttov_profile),       allocatable :: profiles(:)
    type (rttov_profile_cloud), allocatable :: cld_profiles(:)!定义scatt模拟需要的额外廓线
+   logical,allocatable :: use_chan(:)
    integer,allocatable :: channel_list(:)
    ! RTTOV out parameters
    integer             :: errorstatus
@@ -46,7 +47,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
       & nprof,                   &
       & cld_profiles,            &
       & nlevels,                 &
-	  & use_totalice =.false.    & ! false => separate ciw and snow; true => totalice
+	  & use_totalice =.false.,   & ! false => separate ciw and snow; true => totalice
       & asw=1,                   & ! Switch (1=allocate; 0=deallocate)
       & init = .true.,           &
 	  & mmr_snowrain =.false. )    ! snow/rain input units: false => kg/m2/s; true => kg/kg
@@ -58,7 +59,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    !------------------------生成通道、廓线和频率索引-------------------
    !确定哪些指定通道用于模拟
    !为channel_list赋值,channel_list是一个由1到nchannel的数字列表
-   !channel_list=[(i,i=1,nchanl)]
+   channel_list=[(i,i=1,nchanl)]
 
    allocate(use_chan(nprof,coefs%coef%fmv_chn), frequencies(nchanprof))
    !Set use_chan to .TRUE. only for required channels

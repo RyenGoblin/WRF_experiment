@@ -41,7 +41,7 @@ module da_define_structures
    use da_wavelet, only : nij,ws
 
    implicit none
-   
+
    !--------------------------------------------------------------------------
    ! [2.0] Background field structure definition:
    !--------------------------------------------------------------------------
@@ -73,7 +73,7 @@ module da_define_structures
 
       real             :: fft_adjoint_factor ! FFT Adjoint factor
       ! spectral transform related variables
-      integer          :: inc                ! Vector array increment 
+      integer          :: inc                ! Vector array increment
       integer          :: ni
       integer          :: nj
       integer          :: nk
@@ -122,10 +122,10 @@ module da_define_structures
       real                    :: dy
       real                    :: dym
       logical                 :: proc_domain
-      ! obs_global_index is the original index of this obs in the serial 
-      ! code.  It is used to reassemble obs in serial-code-order to replicate 
-      ! summation order for bitwise-exact testing of distributed-memory 
-      ! parallel configurations.  
+      ! obs_global_index is the original index of this obs in the serial
+      ! code.  It is used to reassemble obs in serial-code-order to replicate
+      ! summation order for bitwise-exact testing of distributed-memory
+      ! parallel configurations.
       integer                 :: obs_global_index
    end type model_loc_type
 
@@ -204,10 +204,10 @@ module da_define_structures
       real, allocatable       :: zk(:,:)
       logical, allocatable    :: proc_domain(:,:)
       logical, allocatable    :: thinned(:,:)
-      ! obs_global_index is the original index of this obs in the serial 
-      ! code.  It is used to reassemble obs in serial-code-order to replicate 
-      ! summation order for bitwise-exact testing of distributed-memory 
-      ! parallel configurations.  
+      ! obs_global_index is the original index of this obs in the serial
+      ! code.  It is used to reassemble obs in serial-code-order to replicate
+      ! summation order for bitwise-exact testing of distributed-memory
+      ! parallel configurations.
       integer, allocatable                 :: obs_global_index(:)
    end type infa_type
 
@@ -219,7 +219,7 @@ module da_define_structures
       real                    :: y                    ! radar site loc
       real                    :: zk                   ! radar site loc
    end type stn_loc_type
- 
+
    type radar_type
       type (stn_loc_type)     :: stn_loc
 
@@ -292,16 +292,16 @@ module da_define_structures
       integer                :: levels        ! number of levels
       real                   :: lat           ! Latitude in degree
       real                   :: lon           ! Longitude in degree
-      real                   :: elv           ! Elevation in 
+      real                   :: elv           ! Elevation in
    end type rain_stn_type
 
    type rain_type
-      real                    :: height    
-      integer                 :: height_qc 
+      real                    :: height
+      integer                 :: height_qc
       type (stn_loc_type)     :: stn_loc
-      type (field_type)       :: model_rainc    
-      type (field_type)       :: model_rainnc   
-      type (field_type)       :: rain             
+      type (field_type)       :: model_rainc
+      type (field_type)       :: model_rainnc
+      type (field_type)       :: rain
    end type rain_type
 
    type rain_each_type
@@ -326,16 +326,16 @@ module da_define_structures
       integer                :: levels        ! number of levels
       real                   :: lat           ! Latitude in degree
       real                   :: lon           ! Longitude in degree
-      real                   :: elv           ! Elevation in 
+      real                   :: elv           ! Elevation in
    end type lightning_stn_type
 
    type lightning_type
-      type (stn_loc_type)             :: stn_loc  
+      type (stn_loc_type)             :: stn_loc
       real                  , pointer :: height   (:) ! Height in m
-      integer               , pointer :: height_qc(:) ! Height QC	  
+      integer               , pointer :: height_qc(:) ! Height QC
       type (field_type)     , pointer :: w(:)         ! Retrieved vertical velocity from flash rate
       type (field_type)     , pointer :: div(:)       ! Retrieved convergence fileds from vertical velocity
-      type (field_type)     , pointer :: qv(:)        ! Retrieved vapor mixing ratio from flash rate         
+      type (field_type)     , pointer :: qv(:)        ! Retrieved vapor mixing ratio from flash rate
    end type lightning_type
 
    type lightning_each_level_type
@@ -458,7 +458,7 @@ module da_define_structures
       type (field_type)     , pointer :: t        (:) ! temperature.
       type (field_type)     , pointer :: q        (:) ! q.
    end type sound_type
-     
+
    type mtgirs_type
       real                  , pointer :: h        (:) ! Height in m
       real                  , pointer :: p        (:) ! pressure.
@@ -524,8 +524,8 @@ module da_define_structures
       type (field_type)       :: tb85v          ! Brightness T (k) 85V
       type (field_type)       :: tb85h          ! Brightness T (k) 85H
    end type ssmi_tb_type
-   
-   type ssmt1_type   
+
+   type ssmt1_type
       real                  , pointer :: h        (:) ! Height in m
       real                  , pointer :: p        (:) ! Pressure in Pa.
       type (field_type)     , pointer :: t        (:) ! temperature.
@@ -556,21 +556,21 @@ module da_define_structures
       integer              :: npredmax
       integer              :: gammapred
       integer              :: nchanl
-      integer, pointer     :: nbgerr(:) 
+      integer, pointer     :: nbgerr(:)
       real,    pointer     :: pred(:,:)
       real,    pointer     :: pred_mean(:)
       real,    pointer     :: pred_std(:)
    end type varbc_info_type
-   
+
    type varbc_type
       integer              :: nobs
-      integer              :: npred 
+      integer              :: npred
       integer              :: ichanl
       integer, pointer     :: pred_use(:)
       integer, pointer     :: ipred(:)
       integer, pointer     :: index(:)
       real,    pointer     :: param(:)
-      real,    pointer     :: bgerr(:) 
+      real,    pointer     :: bgerr(:)
       real,    pointer     :: vtox(:,:)
    end type varbc_type
    type clddet_geoir_type
@@ -580,7 +580,7 @@ module da_define_structures
      real, allocatable :: CIRH2O_abi(:,:,:) ! only for ABI
      real, allocatable :: tb_stddev_3x3(:)  ! only for ABI
      integer :: RFMFT_ij(2) ! only for ABI
-   end type clddet_geoir_type   
+   end type clddet_geoir_type
    type superob_type
      real, allocatable :: tb_obs(:,:)
      type(clddet_geoir_type), allocatable :: cld_qc(:)
@@ -608,8 +608,8 @@ module da_define_structures
       real,    pointer     :: tb_inv(:,:)
       integer, pointer     :: tb_qc(:,:)
       real,    pointer     :: tb_error(:,:)
-      real,    pointer     :: tb_xb(:,:) 
-      real,    pointer     :: tb_xb_clr(:,:) 
+      real,    pointer     :: tb_xb(:,:)
+      real,    pointer     :: tb_xb_clr(:,:)
       real,    pointer     :: tb_sens(:,:)
       real,    pointer     :: tb_imp(:,:)
       real,    pointer     :: rad_xb(:,:)
@@ -623,10 +623,10 @@ module da_define_structures
       real,    pointer     :: cloud_mod(:,:) ! only for ABI
       real,    pointer     :: cloud_obs(:,:) ! only for ABI
       real, allocatable    :: cloud_frac(:)
-      real,    pointer     :: satzen(:) 
-      real,    pointer     :: satazi(:) 
-      real,    pointer     :: solzen(:) 
-      real,    pointer     :: solazi(:) 
+      real,    pointer     :: satzen(:)
+      real,    pointer     :: satazi(:)
+      real,    pointer     :: solzen(:)
+      real,    pointer     :: solazi(:)
       real,    pointer     :: tropt(:)  !! Tropopause temperature, K.
       real,    pointer     :: t(:,:)
       real,    pointer     :: q(:,:)
@@ -640,13 +640,13 @@ module da_define_structures
       real,    pointer     :: kmax_p(:)
       real,    pointer     :: sensitivity_ratio(:,:,:)
       real,    pointer     :: p_chan_level(:,:)
-      real,    pointer     :: qrn(:,:)
-      real,    pointer     :: qcw(:,:)
-      real,    pointer     :: qci(:,:)
-      real,    pointer     :: qsn(:,:)
+      real,    pointer     :: qrn(:,:) !雨
+      real,    pointer     :: qcw(:,:) !云水
+      real,    pointer     :: qci(:,:) !云冰
+      real,    pointer     :: qsn(:,:) !雪
       real,    pointer     :: qgr(:,:)
       real,    pointer     :: qhl(:,:)
-      real,    pointer     :: pm(:,:)
+      real,    pointer     :: pm(:,:)  ! full-level pressure at model levels
       real,    pointer     :: rcw(:,:) ! cloud water effectiv radius
       real,    pointer     :: rci(:,:) ! cloud ice effective radius
       real,    pointer     :: rrn(:,:) ! rain effective radius
@@ -704,6 +704,10 @@ module da_define_structures
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
       integer, pointer     :: crtm_climat(:) ! CRTM only
+	  real,    pointer     :: phm(:,:)        ! half-level pressure at model levels
+	  real,    pointer     :: cc(:,:)         ! cloud cover at model levels
+      real,    pointer     :: rain(:,:)       ! rainfall rate in kg/m2/s
+      real,    pointer     :: rh(:,:)         ! relative humility
       integer              :: superob_width = 1
       type (varbc_info_type)        :: varbc_info
       type (varbc_type),pointer     :: varbc(:)
@@ -875,7 +879,7 @@ module da_define_structures
       real, pointer :: t(:)                     ! temperature.
       real, pointer :: q(:)                     ! specific humidity.
    end type residual_sound_type
-     
+
    type residual_mtgirs_type
       real, pointer :: u(:)                     ! u-wind.
       real, pointer :: v(:)                     ! v-wind.
@@ -944,11 +948,11 @@ module da_define_structures
       real                    :: tb85v          ! Brightness T (k) 85V
       real                    :: tb85h          ! Brightness T (k) 85H
    end type residual_ssmi_tb_type
-   
+
    type residual_ssmt1_type
       real, pointer :: t(:)                       ! temperature.
    end type residual_ssmt1_type
-   
+
    type residual_ssmt2_type
       real, pointer :: rh(:)                      ! Relative Humidity.
    end type residual_ssmt2_type
@@ -964,7 +968,7 @@ module da_define_structures
    type residual_radar_type
       real, pointer :: rv(:)                    ! rv
       real, pointer :: rf(:)                    ! rf
-      real, pointer :: rcl(:)                   ! 
+      real, pointer :: rcl(:)                   !
       real, pointer :: rci(:)                   !
       real, pointer :: rrn(:) => null()         ! rrain
       real, pointer :: rsn(:) => null()         ! rsnow
@@ -987,7 +991,7 @@ module da_define_structures
 
    type residual_rain_type
       real :: rain
-   end type residual_rain_type 
+   end type residual_rain_type
 
 #if (WRF_CHEM == 1)
    type residual_chem_surf_type
@@ -1055,7 +1059,7 @@ module da_define_structures
    !--------------------------------------------------------------------------
    ! [5.0] Control variable structure:
    !--------------------------------------------------------------------------
-   
+
    type jo_type_rad
       integer, pointer :: num_ichan(:)
       real, pointer    :: jo_ichan(:)
