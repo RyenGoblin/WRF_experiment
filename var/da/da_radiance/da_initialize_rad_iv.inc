@@ -138,7 +138,14 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    end if
    if ( rtm_option == rtm_option_rttov ) then
       iv%instid(i)%surftype(n)     = 0
-      iv%instid(i)%snow_frac(n)     = 0.0
+      iv%instid(i)%snow_frac(n)     = 0.
+	  if (rttov_scatt == 1) then
+	     iv%instid(i)%phm(:,n)=0.0
+	  	 iv%instid(i)%rain(:,n) = 0.0
+	     iv%instid(i)%cc(:,n) = 0.0
+		 iv%instid(i)%sp(:,n) =0.0
+		 iv%instid(i)%rh(:,n) =0.0
+	  
    end if
 
    iv%instid(i)%gamma_jacobian(:,n)=0.0

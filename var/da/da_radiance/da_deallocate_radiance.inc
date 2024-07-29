@@ -112,6 +112,12 @@
             if (rtm_option == rtm_option_rttov) then
                deallocate (iv%instid(i)%surftype)
                deallocate (iv%instid(i)%snow_frac)
+			   if (rttov_scatt == 1) then
+			     deallocate (iv%instid(i)%rain)
+		         deallocate (iv%instid(i)%cc)
+		         deallocate (iv%instid(i)%sp)
+		         deallocate (iv%instid(i)%phm)
+				 deallocate (iv%instid(i)%rh)
             end if
             deallocate (iv%instid(i)%elevation)
             deallocate (iv%instid(i)%vegfra)
