@@ -315,7 +315,11 @@ subroutine da_radiance_init(iv,ob)
 
     if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
-       call da_rttov_init(iv,ob,nsensor,nchanl)
+       if (rttov_scatt == 1) then
+	       call da_rttov_scatt_init(iv,ob,nsensor,nchanl)
+	   else
+           call da_rttov_init(iv,ob,nsensor,nchanl)
+	   end if
 #else
        call da_error(__FILE__,__LINE__, &
           (/"Must compile with $RTTOV option for radiances"/))

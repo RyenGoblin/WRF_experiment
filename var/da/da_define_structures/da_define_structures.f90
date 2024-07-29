@@ -708,6 +708,7 @@ module da_define_structures
 	  real,    pointer     :: cc(:,:)         ! cloud cover at model levels
       real,    pointer     :: rain(:,:)       ! rainfall rate in kg/m2/s
       real,    pointer     :: rh(:,:)         ! relative humility
+	  real,    pointer     :: sp(:,:)         ! solid precipitation
       integer              :: superob_width = 1
       type (varbc_info_type)        :: varbc_info
       type (varbc_type),pointer     :: varbc(:)

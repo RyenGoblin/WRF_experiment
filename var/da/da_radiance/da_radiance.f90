@@ -22,10 +22,9 @@ module da_radiance
       rttov_platform_name, rttov_inst_name, crtm_sensor_name  ! names used by both RTTOV and CRTM
 #ifdef RTTOV
    use module_radiance, only : coefs, rttov_coefs, rttov_profile, rttov_radiance, &
-      rttov_transmission,errorstatus_success,gas_id_watervapour,rttov_emissivity
-   #ifdef rttov_scatt
-      use module_radiance, only : coefs_scatt,rttov_scatt_coef,rttov_profile_cloud 
-   #endif
+      rttov_transmission,errorstatus_success,gas_id_watervapour,rttov_emissivity,&
+      coefs_scatt,rttov_scatt_coef,rttov_profile_cloud 
+  
 #endif
 #ifdef CRTM
    use module_radiance, only : crtm_channelinfo_type, crtm_platform_name, crtm_init, &
@@ -92,8 +91,7 @@ module da_radiance
    use da_reporting, only : da_message, da_warning, message, da_error
 #ifdef RTTOV
    use da_rttov, only : da_rttov_init, da_get_innov_vector_rttov 
-   #ifdef RTTOV_SCATT
-      use da_rttov_scatt, only : da_rttov_scatt_init,da_get_innov_vector_rttov_scatt
+   use da_rttov_scatt, only : da_rttov_scatt_init,da_get_innov_vector_rttov_scatt
    #endif
 #endif
    use da_statistics, only : da_stats_calculate
