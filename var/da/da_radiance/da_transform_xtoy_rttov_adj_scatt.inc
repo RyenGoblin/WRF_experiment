@@ -636,5 +636,5 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
        (/"Must compile with $RTTOV option for radiances"/))
 #endif
  
-end subroutine da_transform_xtoy_rttov_adj
+end subroutine da_transform_xtoy_rttov_adj_scatt
 

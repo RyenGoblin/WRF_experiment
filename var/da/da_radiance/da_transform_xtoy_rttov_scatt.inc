@@ -644,5 +644,5 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
        (/"Must compile with $RTTOV option for radiances"/))
 #endif
 
-end subroutine da_transform_xtoy_rttov
+end subroutine da_transform_xtoy_rttov_scatt
 

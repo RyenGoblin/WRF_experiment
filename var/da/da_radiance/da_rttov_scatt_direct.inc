@@ -20,7 +20,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 
    ! local variables
    integer             :: nchanprof, asw
-   integer             :: n, i, j, k,ilev,iprof              !由于scatt_forward需要读取每条廓线的压力层数据(full\half pressure level)，额外定义ilev\iprof
+   integer             :: n, i, j, k,iprof              !由于scatt_forward需要读取每条廓线的压力层数据(full\half pressure level)，额外定义ilev\iprof
    integer             :: alloc_status(3)
    integer(KIND=jpim), pointer :: frequencies(:) => NULL()   !定义频率
    logical             :: use_totalice, mmr_snowrain
@@ -103,28 +103,27 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 
    do iprof = 1, nprof
 
-	 do ilev = 1,nlevels
-	   if (use_totalice = .true.) then !使用totalice
-	     profiles(iprof)     % p   (ilev)     = coefs(inst)%coef%ref_prfl_p(:)    (ilev) ! full level pressure (hPa)
-		 cld_profiles(iprof) % ph  (ilev)     = con_cld_vars(iprof)%ph      (ilev) ! half level pressure (hPa)
-		 profiles(iprof)     % t   (ilev)     = con_cld_vars(iprof)%t       (ilev) ! temperature (K)
-		 profiles(iprof)     % q   (ilev)     = con_vars(iprof)%q           (ilev) ! specific humility
-		 cld_profiles(iprof) % cc  (ilev)     = con_cld_vars(iprof)%cc      (ilev) ! cloud cover (0-1)
-         cld_profiles(iprof) % clw (ilev)     = con_cld_vars(iprof)%clw     (ilev) ! liquid water (kg/kg)
-         cld_profiles(iprof) % totalice(ilev) = con_cld_vars(iprof)%totalice(ilev) ! combined ice water and snow (kg/kg)
-         cld_profiles(iprof) % rain(ilev)     = con_cld_vars(iprof)%rain    (ilev) ! rain (kg/kg)
-	    else                           !不使用totalice
-	     profiles(iprof)     % p   (ilev)     = con_cld_vars(iprof)%p       (ilev) ! full level pressure (hPa)
-		 cld_profiles(iprof) % ph  (ilev)     = con_cld_vars(iprof)%ph      (ilev) ! half level pressure (hPa)
-		 profiles(iprof)     % t   (ilev)     = con_cld_vars(iprof)%t       (ilev) ! temperature (K)
-		 profiles(iprof)     % q   (ilev)     = con_vars(iprof)%q           (ilev) ! specific humility
-		 cld_profiles(iprof) % cc  (ilev)     = con_cld_vars(iprof)%cc      (ilev) ! cloud cover (0-1)
-         cld_profiles(iprof) % clw (ilev)     = con_cld_vars(iprof)%clw     (ilev) ! liquid water (kg/kg)
-         cld_profiles(iprof) % ciw (ilev)     = con_cld_vars(iprof)%ciw     (ilev) ! ice water (kg/kg)
-		 cld_profiles(iprof) % rain(ilev)     = con_cld_vars(iprof)%rain    (ilev) ! rain (kg/kg)
-		 cld_profiles(iprof) % sp  (ilev)     = con_cld_vars(iprof)%sp      (ilev) ! kg/m2/s
-        end if
-     end do
+       if (use_totalice = .true.) then !使用totalice
+	     profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
+		 cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		 profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
+		 profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		 cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+         cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+         cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%totalice(:) ! combined ice water and snow (kg/kg)
+         cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+	   else                           !不使用totalice
+	     profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
+		 cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		 profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
+		 profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		 cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+         cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+         cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
+		 cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+		 cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
+       end if
+     
 
 
      ! read 2 meter air variables
