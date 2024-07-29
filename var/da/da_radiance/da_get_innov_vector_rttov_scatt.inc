@@ -56,10 +56,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
    real              :: geoht_pixel(kts:min(kte,kme-1))
    real              :: tt_pixel(kts:min(kte,kme-1))
    real              :: pp_pixel(kts:min(kte,kme-1))
-   !半层压力phm
-   real,allocatable  ::phm(:,:)
-   !云覆盖、降雨通量
-   real, allocatable :: fi(:),rain(:)
 
    if (trace_use) call da_trace_entry("da_get_innov_vector_rttov_scatt")
 
@@ -209,18 +205,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
        ! call da_interp_lin_2d (grid%xb%qgr(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qgr(k,:))
 	     call da_interp_lin_3d (grid%xb%rh (:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%rh(:,n1:n2))!将背景场相对湿度插值到观测场中
       end do
-      ! 计算RTTOV-SCATT需要的额外的水凝物变量
-      allocate(fi(kts:kte,n1:n2))
-      allocate(rain(kts:kte,n1:n2))
-      call da_calc_hydrotable(grid,iv,rain,fi,sp)!得到降雨通量、云覆盖
-
-      ! 计算半层压力
-      allocate(phm(kts:kte+1,n1:n2))
-      phm(kts,n1:n2) = iv%instid(inst)%ps (n1:n2) !半层压力的最底层为地表气压
-      phm(kte+1,n1:n2) = grid%xb%ptop             !半层压力的顶层为模式顶层气压
-      do k=kts+1,kte
-         phm(k,n1:n2) = exp(0.5 * (log(pres(k-1,n1:n2)) + log(pres(k+1,n1:n2)))) ！其他半层气压采用对数插值方案
-      end do
+      ! 计算RTTOV-SCATT需要的额外的水凝物变量,计算半层压力
+      call da_calc_hydrotable(grid,iv,iv%instid(inst)%rain,iv%instid(inst)%cc,iv%instid(inst)%sp,iv%instid(inst)%phm)!得到降雨通量、云覆盖
 
       iv%instid(inst)%pm(:,n1:n2)  = v_p(:,n1:n2)
 
@@ -362,12 +348,12 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          !加入con_cld_vars并为其赋值
 		 con_cld_vars(n) % t(1:nlevels)        = iv%instid(inst)%t(1:nlevels,n)
 		 con_cld_vars(n) % q(1:nlevels)        = iv%instid(inst)%mr(1:nlevels,n)
-		 con_cld_vars(n) % ph(1:nlevels)       = phm(1:nlevels,n)
-		 con_cld_vars(n) % cc(1:nlevels)       = fi(1:nlevels,n)
+		 con_cld_vars(n) % ph(1:nlevels)       = iv%instid(inst)%phm(1:nlevels,n)
+		 con_cld_vars(n) % cc(1:nlevels)       = iv%instid(inst)%cc(1:nvelvels,n)
 		 con_cld_vars(n) % clw(1:nlevels)      = iv%instid(inst)%qcw(1:nlevels,n)
-		 con_cld_vars(n) % ciw(1:nlevels)      = iv%instid(inst)%qci(1,nlevels,n)
-         con_cld_vars(n) % rain(1:nlevels)     = fi(1:nlevels,n)
-		 con_cld_vars(n) % sp(1:nlevels)       = sp(1:nlevels,n)
+		 con_cld_vars(n) % ciw(1:nlevels)      = iv%instid(inst)%qci(1:nlevels,n)
+         con_cld_vars(n) % rain(1:nlevels)     = iv%instid(inst)%rain(1:nlevels,n)
+		 con_cld_vars(n) % sp(1:nlevels)       = iv%instid(inst)%sp(1:nlevels,n)
 
 
 
@@ -453,7 +439,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
    if (trace_use) call da_trace_exit("da_get_innov_vector_rttov")
 #else
     call da_error(__FILE__,__LINE__, &
-       (/"Must compile with $RTTOV option for radiances"/))
+       (/"Must compile with $RTTOV_SCATT option for radiances"/))
 #endif
 
 end subroutine da_get_innov_vector_rttov_scatt
