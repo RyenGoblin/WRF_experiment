@@ -24,7 +24,7 @@ module module_radiance
          rttov_transmission, &
          rttov_radiance,     &
          rttov_chanprof,    &
-         rttov_emissivity，  &
+         rttov_emissivity,  &
          rttov_options_scatt, &               
 	     rttov_scatt_coef,    &               
 	     rttov_profile_cloud, &
