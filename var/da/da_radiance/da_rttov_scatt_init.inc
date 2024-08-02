@@ -85,11 +85,11 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
       opts_rt_ir(n) % n2o_data   = .false.
       opts_rt_ir(n) % ch4_data   = .false.
       opts_rt_ir(n) % co_data    = .false.
-   !rttov_scatt_option
+      !rttov_scatt_option
       opts_scatt(n) % interp_mode = 1                    ! 设置插值模式
       opts_scatt(n) % config % verbose = .TRUE.          ! 如果设置为false，只有出现fatal error时才会报错
 	  
-   !construct the full path name to the coef file
+      !construct the full path name to the coef file
       coef_filename = trim(file_path)//trim(coef_prefix)//trim(iv%instid(n)%rttovid_string_coef)//trim(file_suffix)
 	  !增加mietable系数文件路径,暂时设置为fy3_mwhs2的mietable文件
 	  mietable_filename= trim(file_path)//trim(mietable_path)//'mietable_fy3_mwhs2.dat' 
@@ -106,8 +106,8 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
         & opts(n),           &   ! in
       ! & channels     = coefs_channels(1:nchan(n),n),  &  !如果使用scatt要求读取所有通道的信息，所以channels选项不应该被使用
         & file_coef    = trim(coef_filename),  &
-      ! & file_scaer   = trim(scaer_filename), &
-      ! & file_sccld   = trim(sccld_filename) )
+        & file_scaer   = trim(scaer_filename), &
+        & file_sccld   = trim(sccld_filename) )
       if ( errorstatus /= errorstatus_success ) then
          call da_error(__FILE__,__LINE__,(/"rttov_read_coefs fatal error"/))
       end if
@@ -116,7 +116,7 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
 	  call rttov_read_scattcoeffs(&
 	    & errorstatus,            &
 		& coefs(n),               &
-		& coefs_scatt(n)          &
+		& coefs_scatt(n),         &
 		& opts_scatt(n),          &
 		& file_coef = trim(mietable_filename))
 	  if ( errorstatus /= errorstatus_success ) then
@@ -124,12 +124,12 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
       end if
 	  
 	  iv%instid(n)%nlevels = coefs(n)%coef%nlevels
-	        if ( rttov_emis_atlas_ir > 0 .or. rttov_emis_atlas_mw > 0 ) then
+	   if ( rttov_emis_atlas_ir > 0 .or. rttov_emis_atlas_mw > 0 ) then
          id_sensor = coefs(n)%coef%id_sensor
          atlas_type(n) = 0
          if( id_sensor == sensor_id_ir .OR. id_sensor == sensor_id_hi ) then
             atlas_type(n) = atlas_type_ir
-!            atlas_id(n) = uwiremis_atlas_id    !(Previous WRFDA default)
+            !atlas_id(n) = uwiremis_atlas_id    !(Previous WRFDA default)
             atlas_id(n) = rttov_emis_atlas_ir !(namelist variable, can either be 1=uwiremis or 2=camel)
          end if
          if( id_sensor == sensor_id_mw .OR. id_sensor == sensor_id_po ) then

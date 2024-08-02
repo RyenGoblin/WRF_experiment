@@ -321,6 +321,12 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          con_vars(n) % nlevels = nlevels
          allocate (con_vars(n) % t(nlevels))
          allocate (con_vars(n) % q(nlevels))
+		 allocate (con_cld_vars(n) % ph(nlevels+1))
+		 allocate (con_cld_vars(n) % cc(nlevels))
+		 allocate (con_cld_vars(n) % clw(nlevels))
+		 allocate (con_cld_vars(n) % ciw(nlevels))
+		 allocate (con_cld_vars(n) % rain(nlevels))
+		!allocate (con_cld_vars(n) % sp(nlevels))
          if ( use_rttov_kmatrix ) then
             allocate (con_vars(n) % t_jac(nchan,nlevels))
             allocate (con_vars(n) % q_jac(nchan,nlevels))
@@ -331,6 +337,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          end if
 		 
          con_vars(n) % ps           = iv%instid(inst)%ps(n)
+		 con_vars(n) % t            = iv%instid(inst)%t(n)
+		 con_vars(n) % q            = iv%instid(inst)%q(n)
 
          aux_vars(n) % t2m      = iv%instid(inst)%t2m(n)
          aux_vars(n) % q2m      = iv%instid(inst)%mr2m(n)
@@ -346,14 +354,12 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          aux_vars(n) % rlat     = iv%instid(inst)%info%lat(1,n)
 
          !加入con_cld_vars并为其赋值
-		 con_cld_vars(n) % t(1:nlevels)        = iv%instid(inst)%t(1:nlevels,n)
-		 con_cld_vars(n) % q(1:nlevels)        = iv%instid(inst)%mr(1:nlevels,n)
-		 con_cld_vars(n) % ph(1:nlevels)       = iv%instid(inst)%phm(1:nlevels,n)
+		 con_cld_vars(n) % ph(1:nlevels+1)       = iv%instid(inst)%phm(1:nlevels+1,n)!半层压力层数要比nlevels多一层
 		 con_cld_vars(n) % cc(1:nlevels)       = iv%instid(inst)%cc(1:nvelvels,n)
 		 con_cld_vars(n) % clw(1:nlevels)      = iv%instid(inst)%qcw(1:nlevels,n)
 		 con_cld_vars(n) % ciw(1:nlevels)      = iv%instid(inst)%qci(1:nlevels,n)
          con_cld_vars(n) % rain(1:nlevels)     = iv%instid(inst)%rain(1:nlevels,n)
-		 con_cld_vars(n) % sp(1:nlevels)       = iv%instid(inst)%sp(1:nlevels,n)
+		!con_cld_vars(n) % sp(1:nlevels)       = iv%instid(inst)%sp(1:nlevels,n) !固体降水暂无计算公式，不作为输入
 
 
 
@@ -401,6 +407,12 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       do n=n1,n2
          deallocate (con_vars(n) % t)
          deallocate (con_vars(n) % q)
+		 deallocate (con_cld_vars(n) % ph)
+		 deallocate (con_cld_vars(n) % cc)
+		 deallocate (con_cld_vars(n) % clw)
+		 deallocate (con_cld_vars(n) % ciw)
+		 deallocate (con_cld_vars(n) % rain)
+		!deallocate (con_cld_vars(n) % sp)
       end do
 
       !----------------------------------------------------------------

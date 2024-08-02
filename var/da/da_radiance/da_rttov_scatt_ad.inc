@@ -169,7 +169,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
              cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
              cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
 		     cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-		     cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! frozen precip. (kg/kg)
+		     !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! frozen precip. (kg/kg)
          end if
           
    
@@ -288,8 +288,14 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
        write (message( 9),*) 'profiles%p             = ', profiles(1)%p
        write (message(10),*) 'profiles%t             = ', profiles(1)%t
        write (message(11),*) 'profiles%q             = ', profiles(1)%q
+	   write (message(12),*) 'cld_profiles%ph         = ', cld_profiles(1)%ph
+	   write (message(13),*) 'cld_profiles%cc         = ', cld_profiles(1)%cc
+	   write (message(14),*) 'cld_profiles%clw        = ', cld_profiles(1)%clw
+	   write (message(15),*) 'cld_profiles%ciw        = ', cld_profiles(1)%ciw
+	   write (message(16),*) 'cld_profiles%rain       = ', cld_profiles(1)%rain
+	  !write (message(16),*) 'cld_profiles%sp         = ', cld_profiles(1)%sp
        write (message(12),*) 'emissivity_out         = ', emissivity(:)%emis_out
-       write (message(13),*) 'radiance               = ', radiance%bt_clear
+       write (message(13),*) 'radiance               = ', radiance%bt
        write (message(14),*) 'profiles_ad%s2m        = ', profiles_ad(1)%s2m
        write (message(15),*) 'profiles_ad%skin       = ', profiles_ad(1)%skin
        write (message(16),*) 'profiles_ad%zenangle   = ', profiles_ad(1)%zenangle
@@ -297,22 +303,26 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
        write (message(18),*) 'profiles_ad%p          = ', profiles_ad(1)%p
        write (message(19),*) 'profiles_ad%t          = ', profiles_ad(1)%t
        write (message(20),*) 'profiles_ad%q          = ', profiles_ad(1)%q
+	   write (message(12),*) 'cld_profiles_ad%ph      = ', cld_profiles_ad(1)%ph
+	   write (message(13),*) 'cld_profiles_ad%cc      = ', cld_profiles_ad(1)%cc
+	   write (message(14),*) 'cld_profiles_ad%clw     = ', cld_profiles_ad(1)%clw
+	   write (message(15),*) 'cld_profiles_ad%ciw     = ', cld_profiles_ad(1)%ciw
+	   write (message(16),*) 'cld_profiles_ad%rain    = ', cld_profiles_ad(1)%rain
+      !write (message(16),*) 'cld_profiles_ad%sp      = ', cld_profiles_ad(1)%sp
        write (message(21),*) 'emissivity_out_ad      = ', emissivity_ad(:)%emis_out
        write (message(22),*) 'radiance_ad            = ', radiance_ad%bt
    do n = 1, nprofiles
+      con_vars_ad(n)%t(:)         = profiles_ad(n) % t(:)
       con_vars_ad(n)%q(:)         = profiles_ad(n) % q(:)
       con_vars_ad(n)%ps           = profiles_ad(n) % s2m % p
 	  con_cld_vars_ad(n)%p(:)     = cld_profiles_ad(n) % p(:)
 	  con_cld_vars_ad(n)%ph(:)    = cld_profiles_ad(n) % ph(:)
-	  con_cld_vars_ad(n)%t(:)     = cld_profiles_ad(n) % t(:)
 	  con_cld_vars_ad(n)%cc(:)    = cld_profiles_ad(n) % cc(:)
 	  con_cld_vars_ad(n)%clw(:)   = cld_profiles_ad(n) % clw(:)
+      con_cld_vars_ad(n)%ciw(:)   = cld_profiles_ad(n) % ciw(:)
 	  con_cld_vars_ad(n)%rain(:)  = cld_profiles_ad(n) % rain(:)
-	  if (use_totalice = .true.) then
-		  con_cld_vars_ad(n)%totalice(:) = cld_profiles_ad(n) % totalice(:)
-      else
-          con_cld_vars_ad(n)%ciw(:)   = cld_profiles_ad(n) % ciw(:)	  
-		  con_cld_vars_ad(n)%sp(:)    = cld_profiles_ad(n) % sp(:)
+	 !con_cld_vars_ad(n)%sp(:)    = cld_profiles_ad(n) % sp(:) 
+	  
    end do
 
    deallocate (emissivity)

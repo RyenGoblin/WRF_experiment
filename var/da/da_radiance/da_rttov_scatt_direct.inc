@@ -106,7 +106,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
        if (use_totalice = .true.) then !使用totalice
 	     profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
 		 cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		 profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
+		 profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
 		 profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
 		 cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
          cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
@@ -115,13 +115,13 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 	   else                           !不使用totalice
 	     profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
 		 cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		 profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
+		 profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
 		 profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
 		 cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
          cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
          cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
 		 cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-		 cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
+		!cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
        end if
      
 
@@ -139,7 +139,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 	 !Surface variables
 	  profiles(iprof) % skin % t            = aux_vars (iprof) % surft
 	  profiles(iprof) % skin % surftype = aux_vars(iprof) % surftype       !land = 0, sea = 1,seaice = 2
-	  profiles(iprof) % skin % salinity = aux_vars(iprof) % salinity       !FASTEM4-6需要的变量，原始wrfda中没有此变量，需要额外定义
+	 !profiles(iprof) % skin % salinity = aux_vars(iprof) % salinity       !FASTEM4-6需要的变量，原始wrfda中没有此变量，需要额外定义
 
 	 ! for microwave channels, land/sea-ce emissivity is computed
      ! from coefs in prof%skin%fastem, if calcemis = True
@@ -219,6 +219,12 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
       WRITE (UNIT=stderr,FMT=*) 'profiles%p   = ', profiles(1)%p
       WRITE (UNIT=stderr,FMT=*) 'profiles%t   = ', profiles(1)%t
       WRITE (UNIT=stderr,FMT=*) 'profiles%q   = ', profiles(1)%q
+	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%ph =', cld_profiles(1)%ph
+	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%cc =', cld_profiles(1)%cc
+	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%clw =', cld_profiles(1)%clw
+	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%ciw =', cld_profiles(1)%ciw
+	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%rain =', cld_profiles(1)%rain
+	 !WRITE (UNIT=stderr,FMT=*) 'cld_profiles%sp =', cld_profiles(1)%sp
       WRITE (UNIT=stderr,FMT=*) 'calcemis     = ', calcemis
       WRITE (UNIT=stderr,FMT=*) 'emissivity   = ', emissivity(:)%emis_in
       WRITE (UNIT=stderr,FMT=*) 'emissivity_out = ', emissivity(:)%emis_out

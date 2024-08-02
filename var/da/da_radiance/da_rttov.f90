@@ -11,12 +11,14 @@ module da_rttov
    use module_radiance, only : satinfo, &
        i_kind,r_kind, r_double, &
        one, zero, three,deg2rad, q2ppmv, &
-       coefs, opts,opts_rt_ir, rttov_inst_name
+       coefs, opts,opts_rt_ir, rttov_inst_name,&
+	   coefs_scatt,opts_scatt
    use module_radiance, only : rttov_options, rttov_opts_rt_ir, rttov_coefs, rttov_profile, &
        rttov_transmission, rttov_radiance, rttov_chanprof, &
        jpim, jprb, errorstatus_success, errorstatus_fatal, gas_id_watervapour, &
        atlas, atlas_type, atlas_id, atlas_type_ir, atlas_type_mw, &
-       sensor_id_ir, sensor_id_mw, sensor_id_hi, sensor_id_po, rttov_emissivity
+       sensor_id_ir, sensor_id_mw, sensor_id_hi, sensor_id_po, rttov_emissivity,&
+	   rttov_options_scatt,rttov_scatt_coef,rttov_profile_cloud
 
    use da_control, only : max_ob_levels,missing_r, &
       v_interp_p, v_interp_h, tovs_batch, gravity, &
@@ -44,7 +46,8 @@ module da_rttov
    use da_radiance1, only : num_tovs_after,tovs_copy_count, &
       tovs_send_pe, tovs_recv_pe, tovs_send_start, tovs_send_count, &
       tovs_recv_start,con_vars_type,aux_vars_type, &
-      da_biascorr, da_detsurtyp,da_biasprep, da_mspps_emis, da_mspps_ts
+      da_biascorr, da_detsurtyp,da_biasprep, da_mspps_emis, da_mspps_ts,&
+	  con_cld_vars_type
    use da_reporting, only : da_message, message, da_warning, da_error
    use da_tools, only : da_convert_zk, da_get_time_slots
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
@@ -68,18 +71,34 @@ module da_rttov
 #include "rttov_setup_emis_atlas.interface"
 #include "rttov_get_emis.interface"
 #include "rttov_deallocate_emis_atlas.interface"
+#include "rttov_read_scattcoeffs.interface"
+#include "rttov_dealloc_scattcoeffs.interface"
+#include "rttov_scatt.interface"
+#include "rttov_scatt_tl.interface"
+#include "rttov_scatt_ad.interface"
+#include "rttov_alloc_scatt_prof.interface"
+#include "rttov_scatt_setupindex.interface"
    
 contains
 
 #include "da_get_innov_vector_rttov.inc"
 #include "da_transform_xtoy_rttov.inc"
 #include "da_transform_xtoy_rttov_adj.inc"
+#include "da_calc_hydrotable.inc"
+#include "da_get_innov_vector_rttov_scatt.inc"
+#include "da_transform_xtoy_rttov_scatt.inc"
+#include "da_transform_xtoy_rttov_adj_scatt.inc"
 
 #include "da_rttov_init.inc"
 #include "da_rttov_direct.inc"
 #include "da_rttov_tl.inc"
 #include "da_rttov_ad.inc"
 #include "da_rttov_k.inc"
+#include "da_rttov_scatt_init.inc"
+#include "da_rttov_scatt_direct.inc"
+#include "da_rttov_scatt_tl.inc"
+#include "da_rttov_scatt_ad.inc"
+
 
 #endif
 

@@ -34,7 +34,7 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
 
    ! evenly distributed versions
    type(con_vars_type),  allocatable  :: d_con_vars(:), d_con_vars_ad(:)
-   type(con_vars_type),  allocatable  :: d_con_cld_vars(:),d_con_cld_vars_ad(:)
+   type(con_cld_vars_type),  allocatable  :: d_con_cld_vars(:),d_con_cld_vars_ad(:)
    type(aux_vars_type),  allocatable  :: d_aux_vars(:)
    real,    allocatable :: d_tb(:,:)
    integer :: d_num_rad, l_num_rad,e,s,len,nl
@@ -78,20 +78,22 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
 
             allocate (con_vars(n)    % t(nlevels))
             allocate (con_vars(n)    % q(nlevels))
-			allocate (con_cld_vars(n)% ph(nlevels))
+			allocate (con_cld_vars(n)% p(nlevels))
+			allocate (con_cld_vars(n)% ph(nlevels+1))
 			allocate (con_cld_vars(n)% clw(nlevels))
 			allocate (con_cld_vars(n)% ciw(nlevels))
 			allocate (con_cld_vars(n)% cc(nlevels))
 			allocate (con_cld_vars(n)% rain(nlevels))
-			allocate (con_cld_vars(n)% sp(nlevels))
+			!allocate (con_cld_vars(n)% sp(nlevels))
             allocate (con_vars_ad(n) % t(nlevels))
             allocate (con_vars_ad(n) % q(nlevels))
-	        allocate (con_cld_vars_ad(n)% ph(nlevels))
+			allocate (con_cld_vars_ad(n)% p(nlevels))
+	        allocate (con_cld_vars_ad(n)% ph(nlevels+1))
 			allocate (con_cld_vars_ad(n)% clw(nlevels))
 			allocate (con_cld_vars_ad(n)% ciw(nlevels))
 			allocate (con_cld_vars_ad(n)% cc(nlevels))
 			allocate (con_cld_vars_ad(n)% rain(nlevels))
-			allocate (con_cld_vars_ad(n)% sp(nlevels))
+			!allocate (con_cld_vars_ad(n)% sp(nlevels))
 
             con_vars_ad(n) % t(:) = 0.0
             con_vars_ad(n) % q(:) = 0.0
@@ -102,18 +104,20 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
             con_cld_vars_ad% ciw(:)=0.0
             con_cld_vars_ad% cc(:) =0.0
 			con_cld_vars_ad% rain(:) =0.0
-			con_cld_vars_ad% sp(:) =0.0
+			!con_cld_vars_ad% sp(:) =0.0
             			
 
             con_vars(n) % t(:) = iv%instid(i)%t(:,n)
             con_vars(n) % q(:) = iv%instid(i)%mr(:,n)
             con_vars(n) % ps   = iv%instid(i)%ps(n)
+			
+			con_cld_vars(n) % p(:)  = coefs(i)%coef%ref_prfl_p(:,n)
 			con_cld_vars(n) % ph(:) = iv%instid(i)%phm(:,n)
 		    con_cld_vars(n) % cc(:) = iv%instid(i)%cc(:,n)
 		    con_cld_vars(n) % clw(:)= iv%instid(i)%qcw(:,n)
 		    con_cld_vars(n) % ciw(:)= iv%instid(i)%qci(:,n)
             con_cld_vars(n) % rain(:)= iv%instid(i)%rain(:,n)
-		    con_cld_vars(n) % sp(:)  = iv%instid(i)%sp(:,n)
+		    !con_cld_vars(n) % sp(:)  = iv%instid(i)%sp(:,n)
 
             if ( use_rttov_kmatrix ) then
                allocate (con_vars(n) % t_jac(nchan,nlevels))
@@ -164,13 +168,20 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
          do n = 1, d_num_rad
             allocate (d_con_vars(n) % t(nlevels))
             allocate (d_con_vars(n) % q(nlevels))
+		    allocate (d_con_cld_vars(n) % p(nlevels))
+			allocate (d_con_cld_vars(n) % ph(nlevels+1))
+			allocate (d_con_cld_vars(n) % clw(nlevels))
+			allocate (d_con_cld_vars(n) % ciw(nlevels))
+			allocate (d_con_cld_vars(n) % cc(nlevels))
+			allocate (d_con_cld_vars(n) % rain(nlevels))
+			!allocate (d_con_cld_vars_ad(n) % sp(nlevels))
 			allocate (d_con_cld_vars_ad(n) % p(nlevels))
-			allocate (d_con_cld_vars_ad(n) % ph(nlevels))
+			allocate (d_con_cld_vars_ad(n) % ph(nlevels+1))
 			allocate (d_con_cld_vars_ad(n) % clw(nlevels))
 			allocate (d_con_cld_vars_ad(n) % ciw(nlevels))
 			allocate (d_con_cld_vars_ad(n) % cc(nlevels))
 			allocate (d_con_cld_vars_ad(n) % rain(nlevels))
-			allocate (d_con_cld_vars_ad(n) % sp(nlevels))
+			!allocate (d_con_cld_vars_ad(n) % sp(nlevels))
             if ( use_rttov_kmatrix ) then
                allocate (d_con_vars(n) % t_jac(nchan,nlevels))
                allocate (d_con_vars(n) % q_jac(nchan,nlevels))
@@ -188,12 +199,13 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
             do n = 1, l_num_rad
                d_con_vars(n) % t(:) = con_vars(n) % t(:) 
                d_con_vars(n) % q(:) = con_vars(n) % q(:)
+			   d_con_cld_vars_ad(n)%p(:) = con_cld_vars(n) % p(:)
 			   d_con_cld_vars(n)%ph(:)   = con_cld_vars(n) % ph(:)
 			   d_con_cld_vars(n)%clw(:)  = con_cld_vars(n) % clw(:)
 			   d_con_cld_vars(n)%ciw(:)  = con_cld_vars(n) % ciw(:)
 			   d_con_cld_vars(n)%cc(:)   = con_cld_vars(n) % cc(:)
 			   d_con_cld_vars(n)%rain(:) = con_cld_vars(n) % rain(:)
-			   d_con_cld_vars(n)%sp(:)   = con_cld_vars(n) % sp(:)
+			   !d_con_cld_vars(n)%sp(:)   = con_cld_vars(n) % sp(:)
                ! d_aux_vars(n) % fastem(:) = 0.0
                if ( use_rttov_kmatrix ) then
                   d_con_vars(n) % t_jac(:,:) = con_vars(n) % t_jac(:,:)
@@ -441,7 +453,7 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
                con_cld_vars_ad(n) % ciw(:)  = d_con_cld_vars_ad(n) % ciw(:)	
                con_cld_vars_ad(n) % cc(:)   = d_con_cld_vars_ad(n) % cc(:)
                con_cld_vars_ad(n) % rain(:) = d_con_cld_vars_ad(n) % ph(:)
-               con_cld_vars_ad(n) % sp(:)   = d_con_cld_vars_ad(n) % sp(:)			   
+               !con_cld_vars_ad(n) % sp(:)   = d_con_cld_vars_ad(n) % sp(:)			   
             end do
 
             con_vars_ad(1:l_num_rad) % ps = d_con_vars_ad(1:l_num_rad) % ps
@@ -524,14 +536,14 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
 			deallocate (d_con_cld_vars(n) % ciw)
 			deallocate (d_con_cld_vars(n) % cc)
 			deallocate (d_con_cld_vars(n) % rain)
-			deallocate (d_con_cld_vars(n) % sp)
+			!deallocate (d_con_cld_vars(n) % sp)
 			deallocate (d_con_cld_vars_ad(n) % p)
 			deallocate (d_con_cld_vars_ad(n) % ph)
 			deallocate (d_con_cld_vars_ad(n) % clw)
 			deallocate (d_con_cld_vars_ad(n) % ciw)
 			deallocate (d_con_cld_vars_ad(n) % cc)
 			deallocate (d_con_cld_vars_ad(n) % rain)
-			deallocate (d_con_cld_vars_ad(n) % sp)
+			!deallocate (d_con_cld_vars_ad(n) % sp)
 			
             if ( use_rttov_kmatrix ) then
                deallocate (d_con_vars(n) % t_jac)
@@ -606,14 +618,14 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
 			deallocate (con_cld_vars(n)% ciw)
 			deallocate (con_cld_vars(n)% cc)
 			deallocate (con_cld_vars(n)% rain)
-			deallocate (con_cld_vars(n)% sp)
+			!deallocate (con_cld_vars(n)% sp)
 			deallocate (con_cld_vars_ad(n)% p)
 			deallocate (con_cld_vars_ad(n)% ph)
 			deallocate (con_cld_vars_ad(n)% clw)
 			deallocate (con_cld_vars_ad(n)% ciw)
 			deallocate (con_cld_vars_ad(n)% cc)
 			deallocate (con_cld_vars_ad(n)% rain)
-			deallocate (con_cld_vars_ad(n)% sp)
+			!deallocate (con_cld_vars_ad(n)% sp)
             if ( use_rttov_kmatrix ) then
                deallocate (con_vars(n) % t_jac)
                deallocate (con_vars(n) % q_jac)

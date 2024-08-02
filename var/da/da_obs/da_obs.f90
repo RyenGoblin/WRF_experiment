@@ -1,4 +1,4 @@
-module da_obs
+ module da_obs
 
    use da_define_structures, only : multi_level_type, y_type, iv_type, infa_type, &
 #if (WRF_CHEM == 1)
@@ -65,7 +65,8 @@ module da_obs
    use da_lightning, only : da_transform_xtoy_lightning,da_transform_xtoy_lightning_adj
    use da_reporting, only : da_error, message, da_warning, da_message
 #ifdef RTTOV
-   use da_rttov,     only : da_transform_xtoy_rttov,da_transform_xtoy_rttov_adj
+   use da_rttov,     only : da_transform_xtoy_rttov,da_transform_xtoy_rttov_adj, &
+       da_transform_xtoy_rttov_scatt, da_transform_xtoy_rttov_adj_scatt
 #endif
    use da_satem,     only : da_transform_xtoy_satem, da_transform_xtoy_satem_adj
    use da_ships,     only : da_transform_xtoy_ships, da_transform_xtoy_ships_adj

@@ -191,7 +191,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
              cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
              cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
 		     cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-		     cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
+		    !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
          end if
      
 	 
@@ -240,7 +240,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 
       profiles(iprof) % ctp         = 500.0  ! hPa, optional, for simple cloud
       profiles(iprof) % cfraction   = 0.0    ! 0-1, optional, for simple cloud
-     !---------------------------读取profile_TL 这里需要计算扰动------------------------------
+     !---------------------------读取profile_TL ------------------------------
       profiles_tl(iprof) % t(:)       = con_vars_tl(iprof)%t(:)
       profiles_tl(iprof) % q(:)       = con_vars_tl(iprof)%q(:)
       profiles_tl(iprof) % s2m % p    = con_vars_tl(iprof)%ps
@@ -251,7 +251,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 	  cld_profiles_tl(iprof) % ciw    = con_cld_vars_tl(iprof)%ciw(:)
 	  cld_profiles_tl(iprof) % rain   = con_cld_vars_tl(iprof)%rain(:)
 	  cld_profiles_tl(iprof) % cc     = con_cld_vars_tl(iprof)%cc(:)
-	  cld_profiles_tl(iprof) % sp     = con_cld_vars_tl(iprof)%sp(:)
+	  !cld_profiles_tl(iprof) % sp     = con_cld_vars_tl(iprof)%sp(:)
    end do
 	
 	call  rttov_scatt_tl(          &
@@ -284,17 +284,29 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
        write (message(9),*)  'profiles%p              = ', profiles(1)%p
        write (message(10),*) 'profiles%t              = ', profiles(1)%t
        write (message(11),*) 'profiles%q              = ', profiles(1)%q
-       write (message(12),*) 'emissivity_out          = ', emissivity(:)%emis_out
-       write (message(13),*) 'radiance                = ', radiance%bt
-       write (message(14),*) 'profiles_tl%s2m         = ', profiles_tl(1)%s2m
-       write (message(15),*) 'profiles_tl%skin        = ', profiles_tl(1)%skin
-       write (message(16),*) 'profiles_tl%zenangle    = ', profiles_tl(1)%zenangle
-       write (message(17),*) 'profiles_tl%azangle     = ', profiles_tl(1)%azangle
-       write (message(18),*) 'profiles_tl%p           = ', profiles_tl(1)%p 
-       write (message(19),*) 'profiles_tl%t           = ', profiles_tl(1)%t 
-       write (message(20),*) 'profiles_tl%q           = ', profiles_tl(1)%q 
-       write (message(21),*) 'emissivity_out_tl       = ', emissivity_tl(:)%emis_out    
-       write (message(22),*) 'radiance_tl             = ', radiance_tl%bt
+	   write (message(12),*) 'cld_profiles%ph         = ', cld_profiles(1)%ph
+	   write (message(13),*) 'cld_profiles%cc         = ', cld_profiles(1)%cc
+	   write (message(14),*) 'cld_profiles%clw        = ', cld_profiles(1)%clw
+	   write (message(15),*) 'cld_profiles%ciw        = ', cld_profiles(1)%ciw
+	   write (message(16),*) 'cld_profiles%rain       = ', cld_profiles(1)%rain
+	  !write (message(16),*) 'cld_profiles%sp         = ', cld_profiles(1)%sp
+       write (message(17),*) 'emissivity_out          = ', emissivity(:)%emis_out
+       write (message(18),*) 'radiance                = ', radiance%bt
+       write (message(19),*) 'profiles_tl%s2m         = ', profiles_tl(1)%s2m
+       write (message(20),*) 'profiles_tl%skin        = ', profiles_tl(1)%skin
+       write (message(21),*) 'profiles_tl%zenangle    = ', profiles_tl(1)%zenangle
+       write (message(22),*) 'profiles_tl%azangle     = ', profiles_tl(1)%azangle
+       write (message(23),*) 'profiles_tl%p           = ', profiles_tl(1)%p 
+       write (message(24),*) 'profiles_tl%t           = ', profiles_tl(1)%t 
+       write (message(25),*) 'profiles_tl%q           = ', profiles_tl(1)%q
+       write (message(12),*) 'cld_profiles_tl%ph      = ', cld_profiles_tl(1)%ph
+	   write (message(13),*) 'cld_profiles_tl%cc      = ', cld_profiles_tl(1)%cc
+	   write (message(14),*) 'cld_profiles_tl%clw     = ', cld_profiles_tl(1)%clw
+	   write (message(15),*) 'cld_profiles_tl%ciw     = ', cld_profiles_tl(1)%ciw
+	   write (message(16),*) 'cld_profiles_tl%rain    = ', cld_profiles_tl(1)%rain
+      !write (message(16),*) 'cld_profiles_tl%sp      = ', cld_profiles_tl(1)%sp	   
+       write (message(26),*) 'emissivity_out_tl       = ', emissivity_tl(:)%emis_out    
+       write (message(27),*) 'radiance_tl             = ', radiance_tl%bt
        if ( errorstatus /= errorstatus_success ) call da_error(__FILE__,__LINE__,message(1:22))
    end if
    

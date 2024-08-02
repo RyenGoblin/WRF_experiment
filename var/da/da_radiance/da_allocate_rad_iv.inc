@@ -73,7 +73,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
 		   allocate (iv%instid(i)%rain(kts:kte,iv%instid(i)%num_rad))
 		   allocate (iv%instid(i)%cc(kts:kte,iv%instid(i)%num_rad))
 		   allocate (iv%instid(i)%sp(kts:kte,iv%instid(i)%num_rad))
-		   allocate (iv%instid(i)%phm(kts:kte+1,iv%instid(i)%num_rad)
+		   allocate (iv%instid(i)%phm(kts:kte+1,iv%instid(i)%num_rad))
 		   allocate (iv%instid(i)%rh(kts:kte,iv%instid(i)%num_rad))
       end if
       allocate (iv%instid(i)%elevation(iv%instid(i)%num_rad))
