@@ -203,16 +203,16 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          call da_interp_lin_2d (grid%xb%qci(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qci(k,:))
        ! call da_interp_lin_2d (grid%xb%qsn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qsn(k,:))
        ! call da_interp_lin_2d (grid%xb%qgr(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qgr(k,:))
-	     call da_interp_lin_3d (grid%xb%rh (:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%rh(:,n1:n2))!将背景场相对湿度插值到观测场中
+	     call da_interp_lin_2d (grid%xb%rh (:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%rh(k,:))!将背景场相对湿度插值到观测场中
       end do
-      ! 计算RTTOV-SCATT需要的额外的水凝物变量,计算半层压力
-      call da_calc_hydrotable(grid,iv,iv%instid(inst)%rain,iv%instid(inst)%cc,iv%instid(inst)%sp,iv%instid(inst)%phm)!得到降雨通量、云覆盖
-
       iv%instid(inst)%pm(:,n1:n2)  = v_p(:,n1:n2)
 
       iv%instid(inst)%ps(n1:n2) = 0.01 * iv%instid(inst)%ps(n1:n2)       ! hPa
       iv%instid(inst)%mr2m(n1:n2) = iv%instid(inst)%q2m(n1:n2) * q2ppmv  ! ppmv
-
+	  
+	  ! 计算RTTOV-SCATT需要的额外的水凝物变量,计算半层压力
+      call da_calc_hydrotable(grid,iv,iv%instid(inst)%rain,iv%instid(inst)%cc,iv%instid(inst)%sp,iv%instid(inst)%phm)!得到降雨通量、云覆盖
+	  
       ! ADD for computing cloud liquid water path (mm) from guess
 
       pf(kts,n1:n2) = 100.0*iv%instid(inst)%ps(n1:n2)
@@ -265,8 +265,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          coefs(inst),        &
          nchanprof,          &
          chanprof,           &
-         frequencies,        &
-	     )
+         frequencies        )
 
          allocate(profiles(n2-n1+1))
          do n = n1, n2
@@ -336,9 +335,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             con_vars(n) % ps_jac(:)  = 0.0
          end if
 		 
-         con_vars(n) % ps           = iv%instid(inst)%ps(n)
-		 con_vars(n) % t            = iv%instid(inst)%t(n)
-		 con_vars(n) % q            = iv%instid(inst)%q(n)
+         con_vars(n) % t(1:nlevels) = iv%instid(inst)%t(1:nlevels,n)
+         con_vars(n) % q(1:nlevels) = iv%instid(inst)%mr(1:nlevels,n)
 
          aux_vars(n) % t2m      = iv%instid(inst)%t2m(n)
          aux_vars(n) % q2m      = iv%instid(inst)%mr2m(n)
@@ -355,7 +353,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
          !加入con_cld_vars并为其赋值
 		 con_cld_vars(n) % ph(1:nlevels+1)       = iv%instid(inst)%phm(1:nlevels+1,n)!半层压力层数要比nlevels多一层
-		 con_cld_vars(n) % cc(1:nlevels)       = iv%instid(inst)%cc(1:nvelvels,n)
+		 con_cld_vars(n) % cc(1:nlevels)       = iv%instid(inst)%cc(1:nlevels,n)
 		 con_cld_vars(n) % clw(1:nlevels)      = iv%instid(inst)%qcw(1:nlevels,n)
 		 con_cld_vars(n) % ciw(1:nlevels)      = iv%instid(inst)%qci(1:nlevels,n)
          con_cld_vars(n) % rain(1:nlevels)     = iv%instid(inst)%rain(1:nlevels,n)

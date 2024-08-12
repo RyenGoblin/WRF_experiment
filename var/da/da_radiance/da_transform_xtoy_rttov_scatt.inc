@@ -114,6 +114,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
 
             allocate (con_vars(n) % t(nlevels))
             allocate (con_vars(n) % q(nlevels))
+			allocate (con_cld_vars(n) % p(nlevels))
 			allocate (con_cld_vars(n) % ph(nlevels+1))
 			allocate (con_cld_vars(n) % cc(nlevels))
 			allocate (con_cld_vars(n) % clw(nlevels))
@@ -123,6 +124,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
             con_vars(n) % ps   = iv%instid(i)%ps(n)
             con_vars(n) % t(:) = iv%instid(i)%t(:,n)
 		    con_vars(n) % q(:) = iv%instid(i)%mr(:,n)
+			con_cld_vars(n) % p(:)        = coefs(i)%coef%ref_prfl_p(:)
 		    con_cld_vars(n) % ph(:)       = iv%instid(i)%phm(:,n)
 		    con_cld_vars(n) % cc(:)       = iv%instid(i)%cc(:,n)
 		    con_cld_vars(n) % clw(:)      = iv%instid(i)%qcw(:,n)
@@ -154,13 +156,13 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
             con_vars_tl(n) % t(:) = model_t  (:,n)
             con_vars_tl(n) % q(:) = model_mr (:,n)
 			
-			con_cld_vars_tl(n) % p   = coefs(i)%coef%ref_prfl_p(:,n)*0.01
-			con_cld_vars_tl(n) % ph  = iv%instid(i)%phm(:,n)*0.01
-			con_cld_vars_tl(n) % ciw = iv%instid(i)%qci(:,n)*0.01
-			con_cld_vars_tl(n) % clw = iv%instid(i)%qcw(:,n)*0.01
-			con_cld_vars_tl(n) % cc  = iv%instid(i)%cc (:,n)*0.01
-			con_cld_vars_tl(n) % rain= iv%instid(i)%rain(:,n)*0.01
-			!con_cld_vars_tl(n) % sp  = iv%instid(i)%sp (:,n)*0.01
+			con_cld_vars_tl(n) % p(:)   = con_cld_vars(n)%p(:)*0.01
+			con_cld_vars_tl(n) % ph(:)  = iv%instid(i)%phm(:,n)*0.01
+			con_cld_vars_tl(n) % ciw(:) = iv%instid(i)%qci(:,n)*0.01
+			con_cld_vars_tl(n) % clw(:) = iv%instid(i)%qcw(:,n)*0.01
+			con_cld_vars_tl(n) % cc(:)  = iv%instid(i)%cc (:,n)*0.01
+			con_cld_vars_tl(n) % rain(:)= iv%instid(i)%rain(:,n)*0.01
+			!con_cld_vars_tl(n) % sp(:)  = iv%instid(i)%sp (:,n)*0.01
 			
             con_vars(n) % ps   = model_psfc(n)
 
@@ -202,6 +204,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
          do n = 1, d_num_rad
             allocate (d_con_vars(n) % t(nlevels))
             allocate (d_con_vars(n) % q(nlevels))
+			allocate (d_con_cld_vars(n) % p(nlevels))
 			allocate (d_con_cld_vars(n) % ph(nlevels+1))
 			allocate (d_con_cld_vars(n) % clw(nlevels))
 			allocate (d_con_cld_vars(n) % ciw(nlevels))
@@ -217,7 +220,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
 
             allocate (d_con_vars_tl(n) % t(nlevels))
             allocate (d_con_vars_tl(n) % q(nlevels))
-			allocate (d_con_cld_vars_tl(n) % p(nlevesl))
+			allocate (d_con_cld_vars_tl(n) % p(nlevels))
 			allocate (d_con_cld_vars_tl(n) % ph(nlevels+1))
 		    allocate (d_con_cld_vars_tl(n) % clw(nlevels))
 			allocate (d_con_cld_vars_tl(n) % ciw(nlevels))			
@@ -237,6 +240,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
          do n = 1, l_num_rad
             d_con_vars(n) % t(:)    = con_vars(n) % t(:) 
             d_con_vars(n) % q(:)    = con_vars(n) % q(:)
+			d_con_cld_vars(n) % p(:)   = con_cld_vars(n) % p(:)
 			d_con_cld_vars(n) % ph(:)  = con_cld_vars(n) % ph(:)
 			d_con_cld_vars(n) % clw(:) = con_cld_vars(n) % clw(:)
 			d_con_cld_vars(n) % ciw(:) = con_cld_vars(n) % ciw(:)
@@ -568,6 +572,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
             deallocate (d_con_vars(n) % q)
             deallocate (d_con_vars_tl(n) % t)
             deallocate (d_con_vars_tl(n) % q)
+			deallocate (d_con_cld_vars(n) % p)
 			deallocate (d_con_cld_vars(n) % ph)
 		    deallocate (d_con_cld_vars(n) % clw)
 			deallocate (d_con_cld_vars(n) % ciw)			
@@ -607,6 +612,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
             deallocate (con_vars(n) % q)
             deallocate (con_vars_tl(n) % t)
             deallocate (con_vars_tl(n) % q)
+			deallocate (con_cld_vars(n) % p)
 			deallocate (con_cld_vars(n) % ph)
 			deallocate (con_cld_vars(n) % cc)
 			deallocate (con_cld_vars(n) % clw)

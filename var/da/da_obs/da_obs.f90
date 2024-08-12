@@ -34,7 +34,7 @@
       chemic_surf, &
 #endif
       write_mod_filtered_obs, radiance, use_varbc, obs_names, q_error_options,radar_rf_rscl,radar_rv_rscl, kts,kte,kds,kde, &
-      use_gpsephobs
+      use_gpsephobs,rttov_scatt
    ! use_crtm_kmatrix,use_crtm_kmatrix_fast
    use da_control, only : pseudo_tpw, pseudo_ztd, pseudo_ref, pseudo_uvtpq
    use da_define_structures, only : da_allocate_obs_info

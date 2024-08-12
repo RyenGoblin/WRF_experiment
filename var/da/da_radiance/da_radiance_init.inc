@@ -315,7 +315,7 @@ subroutine da_radiance_init(iv,ob)
 
     if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
-       if (rttov_scatt == 1) then
+       if (rttov_scatt .eqv. .true.) then
 	       call da_rttov_scatt_init(iv,ob,nsensor,nchanl)
 	   else
            call da_rttov_init(iv,ob,nsensor,nchanl)

@@ -63,7 +63,7 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
          allocate (con_vars_ad(num_rad))
          allocate (aux_vars(num_rad))
 		 allocate (con_cld_vars(num_rad))
-		 allocate (con_cld_vars_ad(num_ad))
+		 allocate (con_cld_vars_ad(num_rad))
 
          !---------------------------------------------------------------
          ! [1.0] assign tb = R^-1 Re :
@@ -98,20 +98,20 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
             con_vars_ad(n) % t(:) = 0.0
             con_vars_ad(n) % q(:) = 0.0
             con_vars_ad(n) % ps   = 0.0
-			con_cld_vars_ad% p(:) = 0.0
-			con_cld_vars_ad% ph(:)= 0.0
-            con_cld_vars_ad% clw(:)=0.0
-            con_cld_vars_ad% ciw(:)=0.0
-            con_cld_vars_ad% cc(:) =0.0
-			con_cld_vars_ad% rain(:) =0.0
-			!con_cld_vars_ad% sp(:) =0.0
+			con_cld_vars_ad(n) % p(:) = 0.0
+			con_cld_vars_ad(n) % ph(:)= 0.0
+            con_cld_vars_ad(n) % clw(:)=0.0
+            con_cld_vars_ad(n) % ciw(:)=0.0
+            con_cld_vars_ad(n) % cc(:) =0.0
+			con_cld_vars_ad(n) % rain(:) =0.0
+			!con_cld_vars_ad(n) % sp(:) =0.0
             			
 
             con_vars(n) % t(:) = iv%instid(i)%t(:,n)
             con_vars(n) % q(:) = iv%instid(i)%mr(:,n)
             con_vars(n) % ps   = iv%instid(i)%ps(n)
 			
-			con_cld_vars(n) % p(:)  = coefs(i)%coef%ref_prfl_p(:,n)
+			con_cld_vars(n) % p(:)  = coefs(i)%coef%ref_prfl_p(:)
 			con_cld_vars(n) % ph(:) = iv%instid(i)%phm(:,n)
 		    con_cld_vars(n) % cc(:) = iv%instid(i)%cc(:,n)
 		    con_cld_vars(n) % clw(:)= iv%instid(i)%qcw(:,n)
@@ -199,7 +199,7 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
             do n = 1, l_num_rad
                d_con_vars(n) % t(:) = con_vars(n) % t(:) 
                d_con_vars(n) % q(:) = con_vars(n) % q(:)
-			   d_con_cld_vars_ad(n)%p(:) = con_cld_vars(n) % p(:)
+			   d_con_cld_vars(n)%p(:)    = con_cld_vars(n) % p(:)
 			   d_con_cld_vars(n)%ph(:)   = con_cld_vars(n) % ph(:)
 			   d_con_cld_vars(n)%clw(:)  = con_cld_vars(n) % clw(:)
 			   d_con_cld_vars(n)%ciw(:)  = con_cld_vars(n) % ciw(:)
@@ -417,7 +417,7 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
                   !$OMP PARALLEL DO  &
                   !$OMP PRIVATE ( n )
                    do n=1,d_num_rad
-                      call da_rttov_ad (i, nchan, 1, d_con_vars(n:n), &
+                      call da_rttov_scatt_ad (i, nchan, 1, d_con_vars(n:n), &
                          d_aux_vars(n:n), d_con_vars_ad(n:n), d_con_cld_vars(n:n),d_con_cld_vars_ad(n:n),d_tb(:,n:n))
                    end do
                   !$OMP END PARALLEL DO
@@ -613,6 +613,7 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
             deallocate (con_vars(n)    % q)
             deallocate (con_vars_ad(n) % t)
             deallocate (con_vars_ad(n) % q)
+			deallocate (con_cld_vars(n)% p)
 			deallocate (con_cld_vars(n)% ph)
 			deallocate (con_cld_vars(n)% clw)
 			deallocate (con_cld_vars(n)% ciw)

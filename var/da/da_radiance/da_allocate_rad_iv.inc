@@ -69,12 +69,13 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       if (rtm_option == rtm_option_rttov) then
          allocate (iv%instid(i)%surftype(iv%instid(i)%num_rad))
          allocate (iv%instid(i)%snow_frac(iv%instid(i)%num_rad))
-		 if (rttov_scatt == 1) then
-		   allocate (iv%instid(i)%rain(kts:kte,iv%instid(i)%num_rad))
-		   allocate (iv%instid(i)%cc(kts:kte,iv%instid(i)%num_rad))
-		   allocate (iv%instid(i)%sp(kts:kte,iv%instid(i)%num_rad))
-		   allocate (iv%instid(i)%phm(kts:kte+1,iv%instid(i)%num_rad))
-		   allocate (iv%instid(i)%rh(kts:kte,iv%instid(i)%num_rad))
+		 if (rttov_scatt .eqv. .true.) then
+		     allocate (iv%instid(i)%rain(kts:kte,iv%instid(i)%num_rad))
+		     allocate (iv%instid(i)%cc(kts:kte,iv%instid(i)%num_rad))
+		     allocate (iv%instid(i)%sp(kts:kte,iv%instid(i)%num_rad))
+		     allocate (iv%instid(i)%phm(kts:kte+1,iv%instid(i)%num_rad))
+		     allocate (iv%instid(i)%rh(kts:kte,iv%instid(i)%num_rad))
+		 end if
       end if
       allocate (iv%instid(i)%elevation(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%vegfra(iv%instid(i)%num_rad))

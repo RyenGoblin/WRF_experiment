@@ -16,7 +16,7 @@ module da_rttov_scatt
        jpim, jprb, errorstatus_success, errorstatus_fatal, gas_id_watervapour, &
        atlas, atlas_type, atlas_id, atlas_type_ir, atlas_type_mw, &
        sensor_id_ir, sensor_id_mw, sensor_id_hi, sensor_id_po, rttov_emissivity,&
-	   rttov_options_scatt,rttov_scatt_coef,rttov_profile_cloud,
+	   rttov_options_scatt,rttov_scatt_coef,rttov_profile_cloud
 
    use da_control, only : max_ob_levels,missing_r, &
       v_interp_p, v_interp_h, tovs_batch, gravity, &
@@ -44,7 +44,8 @@ module da_rttov_scatt
    use da_radiance1, only : num_tovs_after,tovs_copy_count, &
       tovs_send_pe, tovs_recv_pe, tovs_send_start, tovs_send_count, &
       tovs_recv_start,con_vars_type,aux_vars_type, &
-      da_biascorr, da_detsurtyp,da_biasprep, da_mspps_emis, da_mspps_ts
+      da_biascorr, da_detsurtyp,da_biasprep, da_mspps_emis, da_mspps_ts, &
+	  con_cld_vars_type
    use da_reporting, only : da_message, message, da_warning, da_error
    use da_tools, only : da_convert_zk, da_get_time_slots
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
@@ -86,6 +87,7 @@ contains
 #include "da_rttov_scatt_direct.inc"
 #include "da_rttov_scatt_tl.inc"
 #include "da_rttov_scatt_ad.inc"
+#include "da_rttov_k.inc"
 
 #endif
 

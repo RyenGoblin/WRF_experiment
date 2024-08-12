@@ -115,9 +115,9 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
       !Read the RTTOV-SCATT Mietable file
 	  call rttov_read_scattcoeffs(&
 	    & errorstatus,            &
+		& opts_scatt(n),          &
 		& coefs(n),               &
 		& coefs_scatt(n),         &
-		& opts_scatt(n),          &
 		& file_coef = trim(mietable_filename))
 	  if ( errorstatus /= errorstatus_success ) then
          call da_error(__FILE__,__LINE__,(/"rttov_read_scattcoeffs fatal error"/))
@@ -141,3 +141,5 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
 
    deallocate (sensor)
    deallocate (coefs_channels)
+   
+end subroutine da_rttov_scatt_init

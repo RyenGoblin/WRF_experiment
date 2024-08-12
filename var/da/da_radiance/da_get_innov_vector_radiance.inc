@@ -30,7 +30,7 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
    !------------------------------------------------------------------------
    if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
-      if (rttov_scatt == 1) then
+      if (rttov_scatt .eqv. .true.) then
 	      call da_get_innov_vector_rttov_scatt(it, grid, ob, iv )
       else		  
           call da_get_innov_vector_rttov( it, grid, ob, iv )

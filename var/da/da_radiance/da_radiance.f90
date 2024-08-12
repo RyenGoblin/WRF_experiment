@@ -93,7 +93,7 @@ module da_radiance
    use da_rttov, only : da_rttov_init, da_get_innov_vector_rttov , &
       da_rttov_scatt_init,da_get_innov_vector_rttov_scatt
 
-   #endif
+   
 #endif
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual, da_obs_sfc_correction, &

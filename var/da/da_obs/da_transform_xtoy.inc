@@ -61,7 +61,7 @@ subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
    if (use_rad) then
       if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
-          if (rttov_scatt == 1) then
+          if (rttov_scatt .eqv. .true.) then
 		     call da_transform_xtoy_rttov_scatt (grid,iv,y)
 		  else
 		     call da_transform_xtoy_rttov (grid, iv, y)
