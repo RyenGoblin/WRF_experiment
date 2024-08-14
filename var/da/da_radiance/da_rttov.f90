@@ -73,6 +73,7 @@ module da_rttov
 #include "rttov_deallocate_emis_atlas.interface"
 #include "rttov_read_scattcoeffs.interface"
 #include "rttov_dealloc_scattcoeffs.interface"
+#include "rttov_alloc_direct.interface"
 #include "rttov_scatt.interface"
 #include "rttov_scatt_tl.interface"
 #include "rttov_scatt_ad.interface"

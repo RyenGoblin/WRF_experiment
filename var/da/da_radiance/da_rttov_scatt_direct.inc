@@ -1,6 +1,6 @@
-#ifdef RTTOV_SCATT
+#ifdef RTTOV
 subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
-                          con_vars, aux_vars, con_cld_vars&
+                          con_vars, aux_vars, con_cld_vars, &
                           tb, rad_xb, rad_ovc, emissivity)! 增加了额外的云雨背景场变量con_cld_vars
 
    !---------------------------------------------------------------------------
@@ -15,20 +15,20 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    real                , intent (inout) :: tb(nchanl,nprofiles)
    real                , intent (inout) :: rad_xb(nchanl,nprofiles)
    real                , intent (inout) :: rad_ovc(nchanl,nlevels-1,nprofiles)
-   type (rttov_emissivity), pointer     :: calcemis(:)  => NULL()
    type (rttov_emissivity), intent (inout) :: emissivity(nchanl*nprofiles)
 
    ! local variables
    integer             :: nchanprof, asw
-   integer             :: n, i, j, k,iprof              !由于scatt_forward需要读取每条廓线的压力层数据(full\half pressure level)，额外定义ilev\iprof
+   integer             :: n, i, j, k,iprof              !由于scatt_forward需要读取每条廓线的压力层数据(full\half pressure level)，额外定义iprof
    integer             :: alloc_status(3)
-   integer(KIND=jpim), pointer :: frequencies(:) => NULL()   !定义频率
+   integer,allocatable :: frequencies(:)    !定义频率
    logical             :: use_totalice, mmr_snowrain
    ! RTTOV input parameters
    type (rttov_chanprof),      allocatable :: chanprof(:)    !定义要模拟的通道/廓线索引
    type (rttov_profile),       allocatable :: profiles(:)
    type (rttov_profile_cloud), allocatable :: cld_profiles(:)!定义scatt模拟需要的额外廓线
-   logical,allocatable :: use_chan(:)
+   logical, allocatable               :: calcemis(:)
+   logical,allocatable :: use_chan(:,:)
    integer,allocatable :: channel_list(:)
    ! RTTOV out parameters
    integer             :: errorstatus
@@ -40,17 +40,18 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    alloc_status (:) = 0
    nchanprof = nchanl*nprofiles
    !Allocate the RTTOV-SCATT cloud profiles structure
-   allocate(cld_profiles(nprof), stat=alloc_status(1))
+   allocate(cld_profiles(nprofiles), stat=alloc_status(1))
    ! 将原本的rttov_alloc_prof替换成了对应的rttov_alloc_scatt_prof并增加对应变量
+  
    call rttov_alloc_scatt_prof(  &
       & errorstatus,             &
-      & nprof,                   &
+      & nprofiles,               &
       & cld_profiles,            &
       & nlevels,                 &
-	  & use_totalice =.false.,   & ! false => separate ciw and snow; true => totalice
+	  & use_totalice=.false.,    & ! false => separate ciw and snow; true => totalice
       & asw=1,                   & ! Switch (1=allocate; 0=deallocate)
-      & init = .true.,           &
-	  & mmr_snowrain =.false. )    ! snow/rain input units: false => kg/m2/s; true => kg/kg
+      & init =.true.,           &
+	  & mmr_snowrain=.false.)    ! snow/rain input units: false => kg/m2/s; true => kg/kg
    if ( errorstatus /= errorstatus_success .or. alloc_status(1) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"scatt_profile allocation error"/))
@@ -61,7 +62,8 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    !为channel_list赋值,channel_list是一个由1到nchannel的数字列表
    channel_list=[(i,i=1,nchanl)]
 
-   allocate(use_chan(nprof,coefs%coef%fmv_chn), frequencies(nchanprof))
+   allocate(use_chan(nprofiles,nchanl)) 
+   allocate(frequencies(nchanprof))
    !Set use_chan to .TRUE. only for required channels
    use_chan(:,:) = .FALSE.
    do j = 1, nprofiles
@@ -75,14 +77,13 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
        nchanprof,          &
        chanprof,           &
        frequencies,        &
-      use_chan,            &
-	)
+       use_chan)
 
    !---------------------------为SCATT_forward模式中的参数的分配内存--------------------
    !调用call rttov_alloc_direct内包含对profiles,rad的allocate，因此不需要在额外为这些数据分配内存
-   call rttov_alloc_direct( &
+   call rttov_alloc_direct(      &
         errorstatus,             &
-        asw=1,                   &
+		1,                       &
         nprofiles,               &
         nchanprof,               &
         nlevels,                 &
@@ -101,27 +102,28 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    !------------------------------廓线数据读取-----------------------------
 
 
-   do iprof = 1, nprof
+   do iprof = 1, nprofiles
 
-       if (use_totalice = .true.) then !使用totalice
-	     profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
-		 cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		 profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
-		 profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		 cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-         cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-         cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%totalice(:) ! combined ice water and snow (kg/kg)
-         cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-	   else                           !不使用totalice
-	     profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
-		 cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		 profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
-		 profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		 cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-         cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-         cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
-		 cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-		!cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
+       if (use_totalice .eqv. .true.) then !使用totalice
+	      profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
+		  cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		  profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
+		  profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		  cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+          cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+         !cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%totalice(:) ! combined ice water and snow (kg/kg)
+          cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+	   else                           
+	     !不使用totalice
+	      profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
+		  cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		  profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
+		  profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		  cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+          cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+          cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
+		  cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+		 !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
        end if
      
 
@@ -163,7 +165,6 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 	 ! Elevation, latitude and longitude
       profiles(iprof) % elevation = 0.001* aux_vars(iprof) % elevation   ! km
       profiles(iprof) % latitude  = aux_vars(iprof) % rlat
-      profiles(iprof) % longitude = aux_vars(iprof) % rlon
 
       profiles(iprof) % zenangle  = aux_vars (iprof) % satzen
       profiles(iprof) % azangle   = aux_vars (iprof) % satazi
@@ -178,7 +179,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
         (/"calemis allocation error"/))
    end if
    !当输入的emissivity值小于等于0时，计算相应的发射率值，在opt%rt_mw%fastem_version中可以选定发射率计算模型，默认为FASTEM6
-   calcemis(:) = (emissivity(:)%emis_in <= 0)
+   calcemis(:) = emissivity(:)%emis_in <= 0
 
    !-----------------------------------
    !  calling RTTOV-SCATT forward model
@@ -186,20 +187,21 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 
    call rttov_scatt(       &
       & errorstatus,       &   ! out
-	  & opts_scatt,        &   ! in
+	  & opts_scatt(inst),  &   ! in
 	  & nlevels,           &   ! in
       & chanprof,          &   ! in     channel and profile index structure
-	  & frequencies        &   ! in     channel indexes for Mietable lookup
-      & profiles,          &   ! in     profiles(nprof)
+	  & frequencies,       &   ! in     channel indexes for Mietable lookup
+      & profiles,          &   ! in     profiles(nprofiles)
 	  & cld_profiles,      &   ! in     cloud/hydrometeor profile array
       & coefs(inst),       &   ! in
-	  & coefs_scatt,       &   ! in     Mietable structure
+	  & coefs_scatt(inst), &   ! in     Mietable structure
       & calcemis=calcemis, &   ! in,    optional   calcemis(nchanprof)
       & emissivity=emissivity,&! inout  optional   emissivity(nchanprof)
-	  & radiance)              ! inout  computed radiances
-   if (errostatus /= errorstatus_success) then
-   call da_error(__FILE__,__LINE__, &
-   (/"rttov_scatt error"/))
+	  & radiance=radiance)              ! inout  computed radiances
+   if (errorstatus /= errorstatus_success) then
+       call da_error(__FILE__,__LINE__, &
+           (/"rttov_scatt error"/))
+   end if
 
    if ( print_detail_rad .or. errorstatus /= errorstatus_success ) then
       WRITE (UNIT=stderr,FMT=*) 'rttov_scatt error code = ', errorstatus
@@ -242,16 +244,22 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 
    ! deallocate profile arrays
    deallocate (frequencies, stat=alloc_status(3))
-   call rttov_alloc_scatt_prof (errorstatus,asw=0,nprofiles,cld_profiles,nlevels)
-   if ( errorstatus /= errorstatus_success or alloc_status(3) /= 0) then
+   if (alloc_status(3) /= 0) then
+      call da_error(__FILE__,__LINE__, &
+        (/"frequencies deallocation error"/))
+   end if
+   call rttov_alloc_scatt_prof (errorstatus,nprofiles,cld_profiles,nlevels,.false.,asw)
+   deallocate (cld_profiles, stat=alloc_status(4))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(4) /= 0) then
       call da_error(__FILE__,__LINE__, &
         (/"scatt_profile deallocation error"/))
    end if
    ! Deallocate structures for RTTOV direct model
+   asw=0
    call rttov_alloc_direct( &
         errorstatus,           &
-        asw=0,                 &  ! 0 => deallocate
-        nprof,                 &
+        asw,                 &  ! 0 => deallocate
+        nprofiles,             &
         nchanprof,             &
         nlevels,               &
         chanprof,              &
@@ -263,7 +271,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
         emissivity = emissivity)
    if (errorstatus /= errorstatus_success) then
      WRITE(*,*) 'deallocation error for rttov_direct structures'
-   end
+   end if
+#endif
 
 end subroutine da_rttov_scatt_direct
-#endif

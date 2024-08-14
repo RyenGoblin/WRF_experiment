@@ -1,4 +1,4 @@
-#ifdef RTTOV_SCATT
+#ifdef RTTOV
 subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
                       aux_vars, con_vars_ad,con_cld_vars,con_cld_vars_ad, tb )
 
@@ -12,12 +12,12 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    type (con_vars_type),  intent (in) :: con_vars (nprofiles)
    type (con_vars_type),  intent (inout) :: con_vars_ad (nprofiles)
    type (con_cld_vars_type),intent (in) :: con_cld_vars (nprofiles)
-   type (con_cld_vars_type),intent (in) :: con_cld_var_ad (nprofiles)
+   type (con_cld_vars_type),intent (inout) :: con_cld_vars_ad (nprofiles)
    type (aux_vars_type),  intent (in) :: aux_vars (nprofiles)
    real                ,  intent (in) :: tb(nchanl,nprofiles)
 
    ! local variables
-   integer             :: n, j, asw, nlevels, nchanprof
+   integer             :: n, j, i, asw, nlevels, nchanprof,iprof
    Integer             :: alloc_status(11)
    
    ! RTTOV input parameters
@@ -25,9 +25,10 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    type (rttov_profile),   allocatable :: profiles(:), profiles_ad(:)
    type (rttov_profile_cloud),  allocatable :: cld_profiles(:),cld_profiles_ad(:)   
    type (rttov_emissivity), allocatable :: emissivity(:), emissivity_ad(:)
-   type (rttov_chanprof),      allocatable :: chanprof(:)    !定义要模拟的通道/廓线索引
    logical,               allocatable  :: calcemis(:)
-   integer(KIND=jpim), pointer         :: frequencies(:) => NULL()   !定义频率
+   logical,allocatable                 :: use_chan(:,:)
+   integer,allocatable                 :: channel_list(:)
+   integer,allocatable                 :: frequencies(:)    !定义频率
    logical                     :: use_totalice, mmr_snowrain
    
    ! RTTOV out parameters
@@ -45,11 +46,12 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    !确定哪些指定通道用于模拟
    !为channel_list赋值,channel_list是一个由1到nchannel的数字列表
    channel_list=[(i,i=1,nchanl)]
-   allocate(use_chan(nprofiles,coefs%coef%fmv_chn), frequencies(nchanprof))
+   allocate(use_chan(nprofiles,nchanl))
+   allocate(frequencies(nchanprof))
    ! Set use_chan to .TRUE. only for required channels
    use_chan(:,:) = .FALSE.
-   do j = 1, nprof
-     use_chan(j,channel_list(1:nchannels)) = .TRUE. 
+   do j = 1, nprofiles
+     use_chan(j,channel_list(1:nchanl)) = .TRUE. 
    end do
    
    !---------------------------给数据分配内存---------------------------
@@ -97,10 +99,10 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    allocate (cld_profiles(nprofiles),stat=alloc_status(3))
    call rttov_alloc_scatt_prof(  &
       & errorstatus,             &
-      & nprof,                   &
+      & nprofiles,               &
       & cld_profiles,            &
       & nlevels,                 &
-	  & use_totalice =.false.    & ! false => separate ciw and snow; true => totalice
+	  & use_totalice =.false.,   & ! false => separate ciw and snow; true => totalice
       & asw=1,                   & ! Switch (1=allocate; 0=deallocate)
       & init = .true.,           & 
 	  & mmr_snowrain =.false.)      ! snow/rain input units: false => kg/m2/s; true => kg/kg
@@ -112,10 +114,10 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    allocate (cld_profiles_ad(nprofiles),stat=alloc_status(4))
    call rttov_alloc_scatt_prof(  &
       & errorstatus,             &
-      & nprof,                   &
+      & nprofiles,               &
       & cld_profiles_ad,         &
       & nlevels,                 &
-	  & use_totalice =.false.    & ! false => separate ciw and snow; true => totalice
+	  & use_totalice =.false.,   & ! false => separate ciw and snow; true => totalice
       & asw=1,                   & 
       & init = .true.,           & 
 	  & mmr_snowrain =.false.)
@@ -123,8 +125,8 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
      call da_error(__FILE__,__LINE__, &
         (/"memory allocation error for scatt profile AD arrays"/))
    end if	   
- 
- call rttov_alloc_rad( &
+  
+   call rttov_alloc_rad( &
       & errorstatus,     &
       & nchanprof,       &
       & radiance,        &
@@ -151,25 +153,25 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    !--------------------------------------读取廓线数据--------------------------------------------------------
    do iprof = 1, nprofiles
       
-	     if (use_totalice = .true.) then !使用totalice
-	         profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p(:)       (:) ! full level pressure (hPa)
-		     cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		     profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
-		     profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		     cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-             cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-             cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%totalice(:) ! combined ice water and snow (kg/kg)
-             cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+	     if (use_totalice .eqv. .true.) then !使用totalice
+	          profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
+		      cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		      profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
+		      profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		      cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+              cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+             !cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%totalice(:) ! combined ice water and snow (kg/kg)
+              cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
 	     else                           !不使用totalice
-	         profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p(:)     (:) ! full level pressure (hPa)
-		     cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		     profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
-		     profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		     cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-             cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-             cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
-		     cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-		     !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! frozen precip. (kg/kg)
+	          profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:)  ! full level pressure (hPa)
+		      cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		      profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
+		      profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		      cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+              cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+              cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
+		      cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+		     !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp     (:) ! frozen precip. (kg/kg)
          end if
           
    
@@ -210,7 +212,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
 	  profiles(iprof) % azangle   = aux_vars (iprof) % satazi
       profiles(iprof) % elevation = 0.001* aux_vars(iprof) % elevation   ! km
       profiles(iprof) % latitude  = aux_vars(iprof) % rlat
-	  profiles(iprof) % longitude = aux_vars(iprof) % rlon
+
 	  if ( opts_rt_ir(inst) % addsolar ) then
          profiles(iprof) % azangle     = aux_vars (iprof) % satazi
          profiles(iprof) % sunzenangle = aux_vars (iprof) % solzen     !50.0
@@ -244,6 +246,11 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
        radiance_ad % total ((n-1)*nchanl+1:n*nchanl) = 0.0
    end do  
 
+   if ( coefs(inst)%coef%id_sensor == sensor_id_ir .or. &
+        coefs(inst)%coef%id_sensor == sensor_id_hi ) then  ! infrared sensor 
+      calcemis(1:nchanprof)   = .true.
+      emissivity(1:nchanprof)%emis_in = 0.0
+      emissivity_ad(1:nchanprof)%emis_in = 0.0
    else if ( coefs(inst)%coef%id_sensor == sensor_id_mw .or. &
              coefs(inst)%coef%id_sensor == sensor_id_po ) then ! microwave sensor
       do n = 1, nprofiles
@@ -261,21 +268,22 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
 	
    call  rttov_scatt_ad(          &
       & errorstatus,       & ! out
-      & chanprof,          & ! in
       & opts_scatt(inst),  & ! in
+	  & nlevels,           & ! in
+      & chanprof,          & ! in
 	  & frequencies,       & ! in
       & profiles,          & ! in 
-      & profiles_ad,       & ! inout
 	  & cld_profiles,      & ! in
-	  & cld_profiles_ad,   & ! in
-      & coefs(inst),       & ! in
+	  & coefs(inst),       & ! in
 	  & coefs_scatt(inst), & ! in
-      & radiance,          & ! inout
-      & radiance_ad,       & ! inout
       & calcemis,          & ! in,    optional
-      & emissivity,        & ! inout, optional
-      & emissivity_ad)       ! inout, optional
-
+      & emissivity,        & ! inout, optional	  
+      & profiles_ad,       & ! inout
+	  & cld_profiles_ad,   & ! in
+      & emissivity_ad,     & ! inout, optional
+      & radiance,          & ! inout
+      & radiance_ad)         ! inout
+	  
    if ( print_detail_rad .or. errorstatus /= errorstatus_success ) then
        write (message( 1),*) 'rttov_ad error code    = ', errorstatus
        write (message( 2),*) 'nchanl                 = ', nchanl
@@ -311,19 +319,20 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
       !write (message(16),*) 'cld_profiles_ad%sp      = ', cld_profiles_ad(1)%sp
        write (message(21),*) 'emissivity_out_ad      = ', emissivity_ad(:)%emis_out
        write (message(22),*) 'radiance_ad            = ', radiance_ad%bt
-   do n = 1, nprofiles
-      con_vars_ad(n)%t(:)         = profiles_ad(n) % t(:)
-      con_vars_ad(n)%q(:)         = profiles_ad(n) % q(:)
-      con_vars_ad(n)%ps           = profiles_ad(n) % s2m % p
-	  con_cld_vars_ad(n)%p(:)     = cld_profiles_ad(n) % p(:)
-	  con_cld_vars_ad(n)%ph(:)    = cld_profiles_ad(n) % ph(:)
-	  con_cld_vars_ad(n)%cc(:)    = cld_profiles_ad(n) % cc(:)
-	  con_cld_vars_ad(n)%clw(:)   = cld_profiles_ad(n) % clw(:)
-      con_cld_vars_ad(n)%ciw(:)   = cld_profiles_ad(n) % ciw(:)
-	  con_cld_vars_ad(n)%rain(:)  = cld_profiles_ad(n) % rain(:)
-	 !con_cld_vars_ad(n)%sp(:)    = cld_profiles_ad(n) % sp(:) 
+       do n = 1, nprofiles
+          con_vars_ad(n)%t(:)         = profiles_ad(n) % t(:)
+          con_vars_ad(n)%q(:)         = profiles_ad(n) % q(:)
+		  con_cld_vars_ad(n)%p(:)     = profiles_ad(n) % p(:)
+          con_vars_ad(n)%ps           = profiles_ad(n) % s2m % p
+	      con_cld_vars_ad(n)%ph(:)    = cld_profiles_ad(n) % ph(:)
+	      con_cld_vars_ad(n)%cc(:)    = cld_profiles_ad(n) % cc(:)
+	      con_cld_vars_ad(n)%clw(:)   = cld_profiles_ad(n) % clw(:)
+          con_cld_vars_ad(n)%ciw(:)   = cld_profiles_ad(n) % ciw(:)
+	      con_cld_vars_ad(n)%rain(:)  = cld_profiles_ad(n) % rain(:)
+	     !con_cld_vars_ad(n)%sp(:)    = cld_profiles_ad(n) % sp(:) 
 	  
-   end do
+       end do
+   end if
 
    deallocate (emissivity)
    deallocate (emissivity_ad)
@@ -357,13 +366,13 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    end if
 
    ! deallocate cld_profile arrays
-   call rttov_alloc_prof (errorstatus,nprofiles,profiles,nlevels,opts(inst),asw=0)
+   call rttov_alloc_scatt_prof (errorstatus,nprofiles,cld_profiles,nlevels,.false.,asw=0)
    deallocate(cld_profiles,stat=alloc_status(10))
    if ( errorstatus /= errorstatus_success .or. alloc_status(10) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"cld_profile deallocation error"/))
    end if
-   call rttov_alloc_prof (errorstatus,nprofiles,profiles_ad,nlevels,opts(inst),asw=0)
+   call rttov_alloc_scatt_prof (errorstatus,nprofiles,cld_profiles_ad,nlevels,.false.,asw=0)
    deallocate(cld_profiles_ad,stat=alloc_status(11))
    if ( errorstatus /= errorstatus_success .or. alloc_status(11) /= 0 ) then
       call da_error(__FILE__,__LINE__, &

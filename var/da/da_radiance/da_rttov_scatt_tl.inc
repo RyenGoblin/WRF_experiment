@@ -1,5 +1,5 @@
-#ifdef RTTOV_SCATT
-subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld_vars &
+#ifdef RTTOV
+subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld_vars, &
                       con_vars_tl, aux_vars_tl,con_cld_vars_tl,tb)
 
    !---------------------------------------------------------------------------
@@ -15,19 +15,21 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
    type (aux_vars_type),  intent (in) :: aux_vars_tl (nprofiles)
    type (con_cld_vars_type),intent (in) :: con_cld_vars (nprofiles)      
    type (con_cld_vars_type),intent (in) :: con_cld_vars_tl (nprofiles) !加入额外的水凝物切线性变量
-   type (rttov_profile_cloud),intent (in):: cld_profiles(:),cld_profiles_tl(:)
    real                , intent (out) :: tb(nchanl,nprofiles)
+   logical,allocatable :: use_chan(:,:)
+   integer,allocatable :: channel_list(:)
 
    ! local variables
-   integer             :: n, j, asw, nlevels, nchanprof,iprof
+   integer             :: n, i, j, asw, nlevels, nchanprof,iprof
    integer             :: alloc_status(11)
    logical             :: use_totalice, mmr_snowrain
    
    type (rttov_chanprof), allocatable  :: chanprof(:)
    type (rttov_profile),   allocatable :: profiles(:), profiles_tl(:) 
+   type (rttov_profile_cloud), allocatable:: cld_profiles(:),cld_profiles_tl(:)
    logical,               allocatable  :: calcemis(:)
    type (rttov_emissivity), allocatable :: emissivity(:), emissivity_tl(:)
-   integer(KIND=jpim), pointer :: frequencies(:) => NULL()   !定义频率
+   integer,allocatable :: frequencies(:)    !定义频率
 
    ! RTTOV out parameters
    integer                            :: errorstatus
@@ -43,11 +45,12 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
    !确定哪些指定通道用于模拟
    !为channel_list赋值,channel_list是一个由1到nchannel的数字列表
    channel_list=[(i,i=1,nchanl)]
-   allocate(use_chan(nprofiles,coefs%coef%fmv_chn), frequencies(nchanprof))
+   allocate(use_chan(nprofiles,nchanl)) 
+   allocate(frequencies(nchanprof))
    ! Set use_chan to .TRUE. only for required channels
    use_chan(:,:) = .FALSE.
-   do j = 1, nprof
-     use_chan(j,channel_list(1:nchannels)) = .TRUE.  
+   do j = 1, nprofiles
+     use_chan(j,channel_list(1:nchanl)) = .TRUE.  
    end do
 
     call rttov_scatt_setupindex ( &
@@ -95,7 +98,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
    
    ! allocate input cld_profile arrays with the number of levels
    allocate (cld_profiles(nprofiles),stat=alloc_status(3))
-   call rttov_alloc_scatt_prof(
+   call rttov_alloc_scatt_prof(  &
         errorstatus,             &
         nprofiles,               &
         cld_profiles,            &
@@ -110,7 +113,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
    end if
 
    allocate (cld_profiles_tl(nprofiles),stat=alloc_status(4))
-   call rttov_alloc_scatt_prof(
+   call rttov_alloc_scatt_prof(  &
         errorstatus,             &
         nprofiles,               &
         cld_profiles_tl,         &
@@ -124,9 +127,9 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
         (/"cld_profile_TL allocation error"/))
    end if  
    
-   ! allocate input radiance array    
-   call rttov_alloc_rad(
-        err,                     &
+   ! allocate input radiance array   
+   call rttov_alloc_rad(         &
+        errorstatus,             &
 		nchanprof,               &
 		radiance,                &
 		nlevels,                 & 
@@ -136,9 +139,9 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
      call da_error(__FILE__,__LINE__, &
        (/"radiance allocation error"/))
    end if
-   
-   call rttov_alloc_rad(
-        err,                     &
+
+   call rttov_alloc_rad(         &
+        errorstatus,             &
 		nchanprof,               &
 		radiance_tl,             &
 		nlevels,                 & 
@@ -146,7 +149,8 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 		init=.true.)
    if ( errorstatus /= errorstatus_success) then
      call da_error(__FILE__,__LINE__, &
-       (/" radiance_TL allocation error/))
+       (/"radiance_TL allocation error"/))
+   end if
 	   
    allocate (emissivity(nchanprof), stat=alloc_status(5))
    allocate (emissivity_tl(nchanprof), stat=alloc_status(6))
@@ -173,25 +177,25 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 
    do iprof = 1, nprofiles
    
-         if (use_totalice = .true.) then !使用totalice
-	         profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p    (:)        ! full level pressure (hPa)
-		     cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		     profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
-		     profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		     cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-             cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-             cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%totalice(:) ! combined ice water and snow (kg/kg)
-             cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+         if (use_totalice .eqv. .true.) then !使用totalice
+	          profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
+		      cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		      profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
+		      profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		      cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+              cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+             !cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%totalice(:) ! combined ice water and snow (kg/kg)
+              cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
 	     else                           !不使用totalice
-	         profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p(:)       (:) ! full level pressure (hPa)
-		     cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		     profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
-		     profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		     cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-             cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-             cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
-		     cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-		    !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
+	          profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
+		      cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		      profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
+		      profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		      cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+              cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+              cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
+		      cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+		     !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
          end if
      
 	 
@@ -208,7 +212,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 	 ! Read surface variables
       profiles(iprof) % skin % t        = aux_vars (iprof) % surft
 	  profiles(iprof) % skin % surftype = aux_vars(iprof) % surftype        !land = 0, sea = 1,seaice = 2
-	  profiles(iprof) % skin % salinity = aux_vars(iprof) % salinity       !FASTEM4-6需要的变量，原始wrfda中没有此变量，需要额外定义
+	 !profiles(iprof) % skin % salinity = aux_vars(iprof) % salinity       !FASTEM4-6需要的变量，原始wrfda中没有此变量，需要额外定义
 	 
 
       if ( coefs(inst)%coef%id_sensor == sensor_id_mw .or. &
@@ -233,7 +237,6 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
       profiles(iprof) % zenangle  = aux_vars (iprof) % satzen
 	  profiles(iprof) % elevation = 0.001* aux_vars(iprof) % elevation   ! km
 	  profiles(iprof) % latitude  = aux_vars(iprof) % rlat
-	  profiles(iprof) % longitude = aux_vars(iprof) % rlon
 	  
       profiles(iprof) % Be          = 0.0   ! optional, for zeeman effect for ssmis and amsua
       profiles(iprof) % cosbk       = 0.0    ! optional, for zeeman effect for ssmis and amsua
@@ -241,23 +244,23 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
       profiles(iprof) % ctp         = 500.0  ! hPa, optional, for simple cloud
       profiles(iprof) % cfraction   = 0.0    ! 0-1, optional, for simple cloud
      !---------------------------读取profile_TL ------------------------------
+	  profiles_tl(iprof) % p(:)       = con_cld_vars_tl(iprof)%p(:)
       profiles_tl(iprof) % t(:)       = con_vars_tl(iprof)%t(:)
       profiles_tl(iprof) % q(:)       = con_vars_tl(iprof)%q(:)
       profiles_tl(iprof) % s2m % p    = con_vars_tl(iprof)%ps
 	 !从da_transform_xtoy_rttov_scatt获取cld_profile_tl
-	  cld_profiles_tl(iprof) % p      = con_cld_vars_tl(iprof)%p(:)
-	  cld_profiles_tl(iprof) % ph     = con_cld_vars_tl(iprof)%ph(:)
-	  cld_profiles_tl(iprof) % clw    = con_cld_vars_tl(iprof)%clw(:)
-	  cld_profiles_tl(iprof) % ciw    = con_cld_vars_tl(iprof)%ciw(:)
-	  cld_profiles_tl(iprof) % rain   = con_cld_vars_tl(iprof)%rain(:)
-	  cld_profiles_tl(iprof) % cc     = con_cld_vars_tl(iprof)%cc(:)
-	  !cld_profiles_tl(iprof) % sp     = con_cld_vars_tl(iprof)%sp(:)
+	  cld_profiles_tl(iprof) % ph(:)     = con_cld_vars_tl(iprof)%ph(:)
+	  cld_profiles_tl(iprof) % clw(:)    = con_cld_vars_tl(iprof)%clw(:)
+	  cld_profiles_tl(iprof) % ciw(:)    = con_cld_vars_tl(iprof)%ciw(:)
+	  cld_profiles_tl(iprof) % rain(:)   = con_cld_vars_tl(iprof)%rain(:)
+	  cld_profiles_tl(iprof) % cc(:)     = con_cld_vars_tl(iprof)%cc(:)
+	  !cld_profiles_tl(iprof)% sp(:)     = con_cld_vars_tl(iprof)%sp(:)
    end do
 	
-	call  rttov_scatt_tl(          &
+	call  rttov_scatt_tl(   &
       & errorstatus,        & ! out
-	  & opts_scatt          & !
-	  & nlevels             & ! in
+	  & opts_scatt(inst),   & !
+	  & nlevels,            & ! in
       & chanprof,           & ! in      chanprof(nchanprof)
 	  & frequencies,        & !
       & profiles,           & ! in      profiles(nprof)
@@ -321,38 +324,38 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 
    asw = 0 ! deallocation
    ! deallocate radiance arrays
-   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels,asw=0)
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels,asw)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"radiance deallocation error"/))
    end if
-   call rttov_alloc_rad (errorstatus,nchanprof,radiance_tl,nlevels,asw=0)
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance_tl,nlevels,asw)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"radiance TL deallocation error"/))
    end if
 
    ! deallocate profile arrays
-   call rttov_alloc_prof (errorstatus,nprofiles,profiles,nlevels,opts(inst),asw=0)
+   call rttov_alloc_prof (errorstatus,nprofiles,profiles,nlevels,opts(inst),asw)
    deallocate (profiles, stat=alloc_status(8))
    if ( errorstatus /= errorstatus_success .or. alloc_status(8) /=0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"profile deallocation error"/))
    end if
-   call rttov_alloc_prof (errorstatus,nprofiles,profiles_tl,nlevels,opts(inst),asw=0)
+   call rttov_alloc_prof (errorstatus,nprofiles,profiles_tl,nlevels,opts(inst),asw)
    deallocate (profiles_tl, stat=alloc_status(9))
    if ( errorstatus /= errorstatus_success .or. alloc_status(9) /=0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"profile TL deallocation error"/))
    end if
    ! deallocate cld_pofile arrays
-   call rttov_alloc_scatt_prof(errorstatus,nprofiles,cld_profiles,nlevel,use_totalice,asw=0,init,mmr_snowrain)
+   call rttov_alloc_scatt_prof(errorstatus,nprofiles,cld_profiles,nlevels,.false.,asw)
    deallocate (cld_profiles, stat=alloc_status(10))
    if ( errorstatus /= errorstatus_success .or. alloc_status(10) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"cld_profile  deallocation error"/))
    end if
-   call rttov_alloc_scatt_prof(errorstatus,nprofiles,cld_profiles_tl,nlevel,use_totalice,asw=0,init,mmr_snowrain)
+   call rttov_alloc_scatt_prof(errorstatus,nprofiles,cld_profiles_tl,nlevels,.false.,asw)
    deallocate(cld_profiles_tl,stat=alloc_status(11))
    if ( errorstatus /= errorstatus_success .or. alloc_status(11) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
@@ -360,5 +363,5 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
    end if
    call da_trace_exit("da_rttov_scatt_tl")
 
-end subroutine da_rttov_scatt_tl
 #endif
+end subroutine da_rttov_scatt_tl
