@@ -118,7 +118,7 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x &
       if (rtm_option == rtm_option_rttov) then
 #ifdef RTTOV
          if (rttov_scatt .eqv. .true.) then
-		      call da_tranform_xtoy_rttov_adj_scatt(iv,jo_grad_y,jo_grad_x)
+		      call da_transform_xtoy_rttov_adj_scatt(iv,jo_grad_y,jo_grad_x)
 		 else
               call da_transform_xtoy_rttov_adj (iv, jo_grad_y, jo_grad_x)
 		 end if
