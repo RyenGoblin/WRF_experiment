@@ -29,7 +29,7 @@ module da_rttov
       time_window_max,time_window_min, kts,kte,kms,kme, &
       rtm_option_rttov,use_rttov_kmatrix,rtm_option_crtm, gravity, &
       print_detail_rad,stderr, mw_emis_sea, &
-      rtminit_print, rttov_scatt,comm,ierr,biasprep, qc_rad, &
+      rtminit_print,comm,ierr,biasprep, qc_rad, &
       num_fgat_time,stdout,trace_use, use_error_factor_rad, &
       qc_good, qc_bad,myproc,biascorr, global,ims,ime,jms,jme, &
       use_clddet, time_slots, rttov_emis_atlas_ir, rttov_emis_atlas_mw, &

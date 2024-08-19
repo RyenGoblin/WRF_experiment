@@ -18,7 +18,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
 
    ! local variables
    integer             :: n, j, i, asw, nlevels, nchanprof,iprof
-   Integer             :: alloc_status(11)
+   Integer             :: alloc_status(18)
    
    ! RTTOV input parameters
    type (rttov_chanprof), allocatable  :: chanprof(:)
@@ -41,31 +41,10 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    nchanprof = nchanl*nprofiles
    nlevels = con_vars(1) % nlevels
    
-   !------------------------生成通道、廓线和频率索引-------------------
-   ! generate the chanprof array
-   !确定哪些指定通道用于模拟
-   !为channel_list赋值,channel_list是一个由1到nchannel的数字列表
-   channel_list=[(i,i=1,nchanl)]
-   allocate(use_chan(nprofiles,nchanl))
-   allocate(frequencies(nchanprof))
-   ! Set use_chan to .TRUE. only for required channels
-   use_chan(:,:) = .FALSE.
-   do j = 1, nprofiles
-     use_chan(j,channel_list(1:nchanl)) = .TRUE. 
-   end do
    
    !---------------------------给数据分配内存---------------------------
-   call rttov_scatt_setupindex ( &
-      nprofiles,          &
-      nchanl,             &
-      coefs(inst),        &
-      nchanprof,          &
-      chanprof,           &
-      frequencies,        &
-      use_chan)
-
    alloc_status (:) = 0
-   
+   ! allocate profiles structure
    allocate ( profiles(nprofiles), stat= alloc_status(1))
    call rttov_alloc_prof(        &
       & errorstatus,             &
@@ -81,6 +60,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
         (/"memory allocation error for profile arrays"/))
    end if
    
+   !allocate profiles_ad structure
    allocate ( profiles_ad(nprofiles), stat= alloc_status(2))
    call rttov_alloc_prof(        &
       & errorstatus,             &
@@ -94,8 +74,9 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    if ( errorstatus /= errorstatus_success .or. alloc_status(2) /= 0 ) then
      call da_error(__FILE__,__LINE__, &
         (/"memory allocation error for profile AD arrays"/))
-   end if   
-   
+   end if
+
+   !allocate cld_profiles structure
    allocate (cld_profiles(nprofiles),stat=alloc_status(3))
    call rttov_alloc_scatt_prof(  &
       & errorstatus,             &
@@ -109,8 +90,9 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    if ( errorstatus /= errorstatus_success .or. alloc_status(3) /= 0 ) then
      call da_error(__FILE__,__LINE__, &
         (/"memory allocation error for scatt profile arrays"/))
-   end if	  
+   end if
    
+   !allocate cld_profiles_ad structure
    allocate (cld_profiles_ad(nprofiles),stat=alloc_status(4))
    call rttov_alloc_scatt_prof(  &
       & errorstatus,             &
@@ -124,8 +106,9 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    if ( errorstatus /= errorstatus_success .or. alloc_status(4) /= 0 ) then
      call da_error(__FILE__,__LINE__, &
         (/"memory allocation error for scatt profile AD arrays"/))
-   end if	   
-  
+   end if 
+
+   !allocate radiance structure
    call rttov_alloc_rad( &
       & errorstatus,     &
       & nchanprof,       &
@@ -149,7 +132,63 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
       call da_error(__FILE__,__LINE__, &
          (/"memory allocation error for radiance AD arrays"/))
    end if
+
+   !allocate emissivity structure
+   allocate (emissivity(nchanprof), stat=alloc_status(5)) 
+   if (alloc_status(5) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for emissivity arrays"/))
+   end if
+
+   !allocate emissivity_ad structure
+   allocate (emissivity_ad(nchanprof), stat=alloc_status(6))
+   if (alloc_status(6) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for emissivity_ad arrays"/))
+   end if
+
+   !allocate calcemis structure
+   allocate (calcemis(nchanprof), stat=alloc_status(7))
+   if (alloc_status(7) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for calcemis arrays"/))
+   end if
    
+   !allocate frequencies structure
+   allocate (frequencies(nchanprof), stat=alloc_status(8))
+   if (alloc_status(8) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for frequencies arrays"/))
+   end if  
+
+   !allocate chanprof structure
+   allocate (chanprof(nchanprof), stat=alloc_status(9))
+   if (alloc_status(9) /= 0) then
+     call da_error(__FILE__,__LINE__, &
+        (/"chanprof allocation error"/))
+   end if
+
+   !------------------------生成通道、廓线和频率索引-------------------
+   ! generate the chanprof array
+   !确定哪些指定通道用于模拟
+   !为channel_list赋值,channel_list是一个由1到nchannel的数字列表
+   channel_list=[(i,i=1,nchanl)]
+   allocate(use_chan(nprofiles,nchanl))
+   ! Set use_chan to .TRUE. only for required channels
+   use_chan(:,:) = .FALSE.
+   do j = 1, nprofiles
+     use_chan(j,channel_list(1:nchanl)) = .TRUE. 
+   end do
+   
+   call rttov_scatt_setupindex ( &
+      nprofiles,          &
+      nchanl,             &
+      coefs(inst),        &
+      nchanprof,          &
+      chanprof,           &
+      frequencies,        &
+      use_chan)
+ 
    !--------------------------------------读取廓线数据--------------------------------------------------------
    do iprof = 1, nprofiles
       
@@ -228,14 +267,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
 
    end do
    
-   allocate (emissivity(nchanprof), stat=alloc_status(5))
-   allocate (emissivity_ad(nchanprof), stat=alloc_status(6))
-   allocate (calcemis(nchanprof), stat=alloc_status(7))   
-   if ( any( alloc_status /= 0 ) ) then
-      call da_error(__FILE__,__LINE__, &
-         (/"memory allocation error for emissivity or calcemis arrays"/))
-   end if
-   !在调用rttov_scatt_ad前，所有AD的输入和输出结构都必须初始化为0
+    !在调用rttov_scatt_ad前，所有AD的输入和输出结构都必须初始化为0
     call rttov_init_prof(profiles_ad)
     call rttov_init_scatt_prof(cld_profiles_ad)
 	call rttov_init_rad(radiance_ad)
@@ -333,51 +365,91 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
 	  
        end do
    end if
-
-   deallocate (emissivity)
-   deallocate (emissivity_ad)
-   deallocate (calcemis)
-   deallocate (chanprof)
-   
-   ! deallocate radiance arrays
-   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels,asw=0)
-   if ( errorstatus /= errorstatus_success ) then
-      call da_error(__FILE__,__LINE__, &
-        (/"radiance deallocation error"/))
-   end if
-   call rttov_alloc_rad (errorstatus,nchanprof,radiance_ad,nlevels,asw=0)
-   if ( errorstatus /= errorstatus_success ) then
-      call da_error(__FILE__,__LINE__, &
-        (/"radiance AD deallocation error"/))
-   end if
-
+ 
+   !--------------------------释放变量内存------------------------
    ! deallocate profile arrays
    call rttov_alloc_prof (errorstatus,nprofiles,profiles,nlevels,opts(inst),asw=0)
-   deallocate(profiles,stat=alloc_status(8))
-   if ( errorstatus /= errorstatus_success .or. alloc_status(8) /= 0 ) then
+   deallocate(profiles,stat=alloc_status(10))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(10) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"profile deallocation error"/))
    end if
+   
+   ! deallocate profile_ad arrays   
    call rttov_alloc_prof (errorstatus,nprofiles,profiles_ad,nlevels,opts(inst),asw=0)
-   deallocate(profiles_ad,stat=alloc_status(9))
-   if ( errorstatus /= errorstatus_success .or. alloc_status(9) /= 0 ) then
+   deallocate(profiles_ad,stat=alloc_status(11))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(11) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"profile AD deallocation error"/))
    end if
 
    ! deallocate cld_profile arrays
    call rttov_alloc_scatt_prof (errorstatus,nprofiles,cld_profiles,nlevels,.false.,asw=0)
-   deallocate(cld_profiles,stat=alloc_status(10))
-   if ( errorstatus /= errorstatus_success .or. alloc_status(10) /= 0 ) then
+   deallocate(cld_profiles,stat=alloc_status(12))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(12) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"cld_profile deallocation error"/))
    end if
+   
+   ! deallocate cld_profile_ad arrays
    call rttov_alloc_scatt_prof (errorstatus,nprofiles,cld_profiles_ad,nlevels,.false.,asw=0)
-   deallocate(cld_profiles_ad,stat=alloc_status(11))
-   if ( errorstatus /= errorstatus_success .or. alloc_status(11) /= 0 ) then
+   deallocate(cld_profiles_ad,stat=alloc_status(13))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(13) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"cld_profile AD deallocation error"/))
    end if
+
+   ! deallocate radiance arrays
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels,asw=0)
+   if ( errorstatus /= errorstatus_success ) then
+      call da_error(__FILE__,__LINE__, &
+        (/"radiance deallocation error"/))
+   end if
+   
+   ! deallocate radiance_ad arrays   
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance_ad,nlevels,asw=0)
+   if ( errorstatus /= errorstatus_success ) then
+      call da_error(__FILE__,__LINE__, &
+        (/"radiance AD deallocation error"/))
+   end if
+
+   !deallocate emissivity structure
+   deallocate (emissivity, stat=alloc_status(14)) 
+   if (alloc_status(14) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for emissivity arrays"/))
+   end if
+
+   !deallocate emissivity_ad structure
+   deallocate (emissivity_ad, stat=alloc_status(15))
+   if (alloc_status(15) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for emissivity_ad arrays"/))
+   end if
+
+   !allocate calcemis structure
+   deallocate (calcemis, stat=alloc_status(16))
+   if (alloc_status(16) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for calcemis arrays"/))
+   end if
+   
+   !allocate frequencies structure
+   deallocate (frequencies, stat=alloc_status(17))
+   if (alloc_status(17) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for frequencies arrays"/))
+   end if  
+
+   !allocate chanprof structure
+   deallocate (chanprof, stat=alloc_status(18))
+   if (alloc_status(18) /= 0) then
+     call da_error(__FILE__,__LINE__, &
+        (/"chanprof allocation error"/))
+   end if
+
+   deallocate(use_chan)
    call da_trace_exit("da_rttov_scatt_ad")
-end subroutine da_rttov_scatt_ad
+   
 #endif
+end subroutine da_rttov_scatt_ad

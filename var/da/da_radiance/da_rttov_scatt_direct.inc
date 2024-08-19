@@ -20,7 +20,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    ! local variables
    integer             :: nchanprof, asw
    integer             :: n, i, j, k,iprof              !由于scatt_forward需要读取每条廓线的压力层数据(full\half pressure level)，额外定义iprof
-   integer             :: alloc_status(3)
+   integer             :: alloc_status(8)
    integer,allocatable :: frequencies(:)    !定义频率
    logical             :: use_totalice, mmr_snowrain
    ! RTTOV input parameters
@@ -39,10 +39,39 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    call da_trace_entry("da_rttov_scatt_direct")
    alloc_status (:) = 0
    nchanprof = nchanl*nprofiles
+   
+   !-----------------------为所有变量分配内存-----------------------
+   !Allocate the RTTOV profiles structures
+   allocate( profiles(nprofiles),stat= alloc_status(1))
+   call rttov_alloc_prof(        &
+      & errorstatus,             &
+      & nprofiles,               &
+      & profiles,                &
+      & nlevels,                 &
+      & opts(inst),              &
+      & asw=1,                   &
+      & coefs = coefs(inst),     &  ! mandatory if either opts%addclouds or opts%addaerosl is true
+      & init = .true.            )  ! additionally initialize profiles structure
+   if ( errorstatus /= errorstatus_success .or. alloc_status(1) /= 0 ) then
+     call da_error(__FILE__,__LINE__, &
+        (/"memory allocation error for profile arrays"/))
+   end if
+
+   !Allocte the Radiance structures
+   call rttov_alloc_rad( &
+      & errorstatus,     &
+      & nchanprof,       &
+      & radiance,        &
+      & nlevels,         &
+      & asw=1,           &
+      & init = .true. )
+   if ( errorstatus /= errorstatus_success ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for radiance arrays"/))
+   end if   
+
    !Allocate the RTTOV-SCATT cloud profiles structure
-   allocate(cld_profiles(nprofiles), stat=alloc_status(1))
-   ! 将原本的rttov_alloc_prof替换成了对应的rttov_alloc_scatt_prof并增加对应变量
-  
+   allocate(cld_profiles(nprofiles), stat=alloc_status(2))  
    call rttov_alloc_scatt_prof(  &
       & errorstatus,             &
       & nprofiles,               &
@@ -52,10 +81,32 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
       & asw=1,                   & ! Switch (1=allocate; 0=deallocate)
       & init =.true.,           &
 	  & mmr_snowrain=.false.)    ! snow/rain input units: false => kg/m2/s; true => kg/kg
-   if ( errorstatus /= errorstatus_success .or. alloc_status(1) /= 0 ) then
+   if ( errorstatus /= errorstatus_success .or. alloc_status(2) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
         (/"scatt_profile allocation error"/))
+   end if  
+  
+   !Allocate calcemis structures
+   allocate (calcemis(nchanprof), stat = alloc_status(3))
+   if ( alloc_status(3) /= 0  ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for calcemis arrays"/))
    end if
+   
+   !Allocate frequencies structures
+   allocate(frequencies(nchanprof),stat = alloc_status(4))
+   if ( alloc_status(4) /= 0   ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for frequencies arrays"/))
+   end if  
+   
+   !Allocate chanprof
+   allocate(chanprof(nchanprof),stat = alloc_status(5))
+   if ( alloc_status(5) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+         (/"memory allocation error for chanprof arrays"/))
+   end if     
+   
 
    !------------------------生成通道、廓线和频率索引-------------------
    !确定哪些指定通道用于模拟
@@ -63,7 +114,6 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    channel_list=[(i,i=1,nchanl)]
 
    allocate(use_chan(nprofiles,nchanl)) 
-   allocate(frequencies(nchanprof))
    !Set use_chan to .TRUE. only for required channels
    use_chan(:,:) = .FALSE.
    do j = 1, nprofiles
@@ -79,26 +129,6 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
        frequencies,        &
        use_chan)
 
-   !---------------------------为SCATT_forward模式中的参数的分配内存--------------------
-   !调用call rttov_alloc_direct内包含对profiles,rad的allocate，因此不需要在额外为这些数据分配内存
-   call rttov_alloc_direct(      &
-        errorstatus,             &
-		1,                       &
-        nprofiles,               &
-        nchanprof,               &
-        nlevels,                 &
-        chanprof,                &
-        opts(inst),              &
-        profiles,                &
-        coefs(inst),             &
-        radiance = radiance,     &
-        calcemis = calcemis,     &
-        emissivity = emissivity, &
-        init = .TRUE.)
-    if (errorstatus /= errorstatus_success) THEN
-         call da_error(__FILE__,__LINE__, &
-        (/"alloc direct model error"/))
-    end if
    !------------------------------廓线数据读取-----------------------------
 
 
@@ -171,13 +201,6 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 
    end do
 
-
-
-   allocate (calcemis(nchanprof), stat = alloc_status(2))
-   if (alloc_status(2) /= 0) then
-         call da_error(__FILE__,__LINE__, &
-        (/"calemis allocation error"/))
-   end if
    !当输入的emissivity值小于等于0时，计算相应的发射率值，在opt%rt_mw%fastem_version中可以选定发射率计算模型，默认为FASTEM6
    calcemis(:) = emissivity(:)%emis_in <= 0
 
@@ -242,36 +265,50 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
       end do
    end do
 
+   !-----------------------为所有变量释放内存-----------------------
    ! deallocate profile arrays
-   deallocate (frequencies, stat=alloc_status(3))
-   if (alloc_status(3) /= 0) then
+   call rttov_alloc_prof (errorstatus,nprofiles,profiles,nlevels,opts(inst),asw=0)
+   deallocate(profiles,stat=alloc_status(6))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(6) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
-        (/"frequencies deallocation error"/))
+        (/"profile deallocation error"/))
    end if
-   call rttov_alloc_scatt_prof (errorstatus,nprofiles,cld_profiles,nlevels,.false.,asw)
-   deallocate (cld_profiles, stat=alloc_status(4))
-   if ( errorstatus /= errorstatus_success .or. alloc_status(4) /= 0) then
+   
+   !deallocate scatt_profiles array
+   call rttov_alloc_scatt_prof (errorstatus,nprofiles,cld_profiles,nlevels,.false.,asw=0)
+   deallocate (cld_profiles, stat=alloc_status(7))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(7) /= 0) then
       call da_error(__FILE__,__LINE__, &
         (/"scatt_profile deallocation error"/))
    end if
-   ! Deallocate structures for RTTOV direct model
-   asw=0
-   call rttov_alloc_direct( &
-        errorstatus,           &
-        asw,                 &  ! 0 => deallocate
-        nprofiles,             &
-        nchanprof,             &
-        nlevels,               &
-        chanprof,              &
-        opts,                  &
-        profiles,              &
-        coefs,                 &
-        radiance = radiance,   &
-        calcemis = calcemis,   &
-        emissivity = emissivity)
-   if (errorstatus /= errorstatus_success) then
-     WRITE(*,*) 'deallocation error for rttov_direct structures'
+   
+   !deallocate frequencies array
+   deallocate (frequencies, stat=alloc_status(8))
+   if (alloc_status(8) /= 0) then
+      call da_error(__FILE__,__LINE__, &
+        (/"frequencies deallocation error"/))
    end if
-#endif
 
+   !deallocate radiance array
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels,asw=0)
+   if ( errorstatus /= errorstatus_success ) then
+      call da_error(__FILE__,__LINE__, &
+        (/"radiance deallocation error"/))
+   end if   
+   
+   !deallocate calcemis and chanprof
+   deallocate (calcemis, stat = alloc_status(9))
+   if (alloc_status(9)/=0) then
+      call da_error(__FILE__,__LINE__, &
+        (/"calcemis deallocation error"/))
+   end if   
+   deallocate (chanprof, stat = alloc_status(10))
+   if (alloc_status(10)/=0) then
+      call da_error(__FILE__,__LINE__, &
+        (/"chanprof deallocation error"/))
+   end if     
+   deallocate (use_chan)   
+   call da_trace_exit("da_rttov_scatt_ad")
+   
+#endif
 end subroutine da_rttov_scatt_direct

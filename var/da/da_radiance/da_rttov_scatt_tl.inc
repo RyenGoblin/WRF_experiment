@@ -21,7 +21,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 
    ! local variables
    integer             :: n, i, j, asw, nlevels, nchanprof,iprof
-   integer             :: alloc_status(11)
+   integer             :: alloc_status(18)
    logical             :: use_totalice, mmr_snowrain
    
    type (rttov_chanprof), allocatable  :: chanprof(:)
@@ -41,27 +41,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
    call da_trace_entry("da_rttov_scatt_tl") 
    nlevels = con_vars(1) % nlevels
    nchanprof = nchanl*nprofiles   
-   !------------------------生成通道、廓线和频率索引-------------------
-   !确定哪些指定通道用于模拟
-   !为channel_list赋值,channel_list是一个由1到nchannel的数字列表
-   channel_list=[(i,i=1,nchanl)]
-   allocate(use_chan(nprofiles,nchanl)) 
-   allocate(frequencies(nchanprof))
-   ! Set use_chan to .TRUE. only for required channels
-   use_chan(:,:) = .FALSE.
-   do j = 1, nprofiles
-     use_chan(j,channel_list(1:nchanl)) = .TRUE.  
-   end do
 
-    call rttov_scatt_setupindex ( &
-       nprofiles,          &
-       nchanl,             &
-       coefs(inst),        &
-       nchanprof,          &
-       chanprof,           &
-       frequencies,        &
-       use_chan)
-   
    !---------------------------为变量分配内存-----------------------------------
    alloc_status(:) = 0  
    
@@ -109,7 +89,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 		mmr_snowrain=.false.)
    if ( errorstatus /= errorstatus_success .or. alloc_status(3) /= 0 ) then
      call da_error(__FILE__,__LINE__, &
-        (/"r cld_profile allocation error"/))
+        (/" cld_profile allocation error"/))
    end if
 
    allocate (cld_profiles_tl(nprofiles),stat=alloc_status(4))
@@ -151,14 +131,63 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
      call da_error(__FILE__,__LINE__, &
        (/"radiance_TL allocation error"/))
    end if
-	   
-   allocate (emissivity(nchanprof), stat=alloc_status(5))
-   allocate (emissivity_tl(nchanprof), stat=alloc_status(6))
-   allocate (calcemis(nchanprof), stat=alloc_status(7))
-   if ( any( alloc_status /= 0 ) ) then
-      call da_error(__FILE__,__LINE__, &
-         (/"memory allocation error for emissivity or calcemis arrays"/))
+   
+   !allocate chanprof structure
+   allocate (chanprof(nchanprof), stat=alloc_status(5))
+   if (alloc_status(5) /= 0) then
+     call da_error(__FILE__,__LINE__, &
+        (/"chanprof allocation error"/))
    end if
+
+   ! allocate emissivity structure   
+   allocate (emissivity(nchanprof), stat=alloc_status(6))
+   if (alloc_status(6) /= 0) then
+     call da_error(__FILE__,__LINE__, &
+        (/"emissivity allocation error"/))
+   end if
+
+   !allocate emissivity_tl structure   
+   allocate (emissivity_tl(nchanprof), stat=alloc_status(7))
+   if (alloc_status(7) /= 0) then
+     call da_error(__FILE__,__LINE__, &
+        (/"emissivity_tl allocation error"/))
+   end if 
+
+   !allocate calcemis structure
+   allocate (calcemis(nchanprof), stat=alloc_status(8))
+   if (alloc_status(8) /= 0) then
+     call da_error(__FILE__,__LINE__, &
+        (/"calcemis allocation error"/))
+   end if
+
+   !allocate frequencies structure
+   allocate(frequencies(nchanprof), stat=alloc_status(9))
+   if (alloc_status(9) /= 0) then
+     call da_error(__FILE__,__LINE__, &
+        (/"frequencies allocation error"/))
+   end if
+   
+   !------------------------生成通道、廓线和频率索引-------------------
+   !确定哪些指定通道用于模拟
+   !为channel_list赋值,channel_list是一个由1到nchannel的数字列表
+   channel_list=[(i,i=1,nchanl)]
+   allocate(use_chan(nprofiles,nchanl)) 
+
+   ! Set use_chan to .TRUE. only for required channels
+   use_chan(:,:) = .FALSE.
+   do j = 1, nprofiles
+     use_chan(j,channel_list(1:nchanl)) = .TRUE.  
+   end do
+
+    call rttov_scatt_setupindex ( &
+       nprofiles,          &
+       nchanl,             &
+       coefs(inst),        &
+       nchanprof,          &
+       chanprof,           &
+       frequencies,        &
+       use_chan)
+    
    if ( coefs(inst)%coef%id_sensor == sensor_id_mw .or. &
              coefs(inst)%coef%id_sensor == sensor_id_po ) then ! microwave sensor
       do n = 1, nprofiles
@@ -264,17 +293,17 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
       & chanprof,           & ! in      chanprof(nchanprof)
 	  & frequencies,        & !
       & profiles,           & ! in      profiles(nprof)
-      & profiles_tl,        & ! inout   profiles_tl(nprof)
-	  & cld_profiles,       & ! inout   
-	  & cld_profiles_tl,    & ! inout
-      & coefs(inst),        & ! in
+	  & cld_profiles,       & ! inout 
+	  & coefs(inst),        & ! in
 	  & coefs_scatt(inst),  & ! in
+	  & calcemis,           & ! in,    optional   calcemis(nchanprof)
+      & emissivity,         & ! inout, optional   emissivity(nchanprof)	  
+      & profiles_tl,        & ! inout   profiles_tl(nprof)
+	  & cld_profiles_tl,    & ! inout
+      & emissivity_tl,      &
       & radiance,           & ! inout
-      & radiance_tl,        & ! inout
-      & calcemis,           & ! in,    optional   calcemis(nchanprof)
-      & emissivity,         & ! inout, optional   emissivity(nchanprof)
-      & emissivity_tl)        ! inout, optional   emissivity_tl(nchanprof)
-
+      & radiance_tl)          ! inout   
+	  
    if ( print_detail_rad .or. errorstatus /= errorstatus_success ) then
        write (message(1),*)  'rttov_tl error code     = ', errorstatus
        write (message(2),*)  'nchanl                  = ', nchanl
@@ -316,51 +345,89 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
    do n = 1, nprofiles
      tb(1:nchanl,n) = radiance_tl % bt((n-1)*nchanl+1:n*nchanl)
    end do
-
-   deallocate (emissivity)
-   deallocate (emissivity_tl)
-   deallocate (calcemis)
-   deallocate (chanprof)
-
-   asw = 0 ! deallocation
+   !--------------------------释放变量内存------------------------
+   ! deallocate profile arrays
+   call rttov_alloc_prof (errorstatus,nprofiles,profiles,nlevels,opts(inst),asw=0)
+   deallocate (profiles, stat=alloc_status(10))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(10) /=0 ) then
+      call da_error(__FILE__,__LINE__, &
+        (/"profile deallocation error"/))
+   end if
+   
+   ! deallocate profiles_tl arrays
+   call rttov_alloc_prof (errorstatus,nprofiles,profiles_tl,nlevels,opts(inst),asw=0)
+   deallocate (profiles_tl, stat=alloc_status(11))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(11) /=0 ) then
+      call da_error(__FILE__,__LINE__, &
+        (/"profile TL deallocation error"/))
+   end if
+   
+   ! deallocate cld_pofile arrays
+   call rttov_alloc_scatt_prof(errorstatus,nprofiles,cld_profiles,nlevels,.false.,asw=0)
+   deallocate (cld_profiles, stat=alloc_status(12))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(12) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+        (/"cld_profile  deallocation error"/))
+   end if
+   
+   ! deallocate cld_pofile_tl arrays
+   call rttov_alloc_scatt_prof(errorstatus,nprofiles,cld_profiles_tl,nlevels,.false.,asw=0)
+   deallocate(cld_profiles_tl,stat=alloc_status(13))
+   if ( errorstatus /= errorstatus_success .or. alloc_status(13) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+        (/"cld_profile TL deallocation error"/))
+   end if
+   
    ! deallocate radiance arrays
-   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels,asw)
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels,asw=0)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"radiance deallocation error"/))
    end if
-   call rttov_alloc_rad (errorstatus,nchanprof,radiance_tl,nlevels,asw)
+   
+   ! deallocate radiance_tl arrays
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance_tl,nlevels,asw=0)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"radiance TL deallocation error"/))
    end if
 
-   ! deallocate profile arrays
-   call rttov_alloc_prof (errorstatus,nprofiles,profiles,nlevels,opts(inst),asw)
-   deallocate (profiles, stat=alloc_status(8))
-   if ( errorstatus /= errorstatus_success .or. alloc_status(8) /=0 ) then
+   ! deallocate emissivity arrays   
+   deallocate (emissivity, stat=alloc_status(14))
+   if ( alloc_status(14) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
-        (/"profile deallocation error"/))
+        (/"emissivity deallocation error"/))
    end if
-   call rttov_alloc_prof (errorstatus,nprofiles,profiles_tl,nlevels,opts(inst),asw)
-   deallocate (profiles_tl, stat=alloc_status(9))
-   if ( errorstatus /= errorstatus_success .or. alloc_status(9) /=0 ) then
+
+   ! deallocate emissivity_tl arrays   
+   deallocate (emissivity_tl, stat=alloc_status(15))
+   if ( alloc_status(15) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
-        (/"profile TL deallocation error"/))
+        (/"emissivity_tl deallocation error"/))
    end if
-   ! deallocate cld_pofile arrays
-   call rttov_alloc_scatt_prof(errorstatus,nprofiles,cld_profiles,nlevels,.false.,asw)
-   deallocate (cld_profiles, stat=alloc_status(10))
-   if ( errorstatus /= errorstatus_success .or. alloc_status(10) /= 0 ) then
+
+   ! deallocate calcemis array   
+   deallocate (calcemis,stat = alloc_status(16))
+   if ( alloc_status(16) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
-        (/"cld_profile  deallocation error"/))
+        (/"calcemis deallocation error"/))
    end if
-   call rttov_alloc_scatt_prof(errorstatus,nprofiles,cld_profiles_tl,nlevels,.false.,asw)
-   deallocate(cld_profiles_tl,stat=alloc_status(11))
-   if ( errorstatus /= errorstatus_success .or. alloc_status(11) /= 0 ) then
+
+   !deallocate chanprof array
+   deallocate (chanprof,stat = alloc_status(17))
+   if ( alloc_status(17) /= 0 ) then
       call da_error(__FILE__,__LINE__, &
-        (/"cld_profile TL deallocation error"/))
-   end if
+        (/"chanporf deallocation error"/))
+   end if   
+   
+   !deallocate frequencies array
+   deallocate (frequencies,stat = alloc_status(18))
+   if ( alloc_status(18) /= 0 ) then
+      call da_error(__FILE__,__LINE__, &
+        (/"frequencies deallocation error"/))
+   end if  
+   
+   deallocate(use_chan)
    call da_trace_exit("da_rttov_scatt_tl")
 
 #endif
