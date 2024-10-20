@@ -704,11 +704,15 @@ module da_define_structures
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
       integer, pointer     :: crtm_climat(:) ! CRTM only
-	  real,    pointer     :: phm(:,:)        ! half-level pressure at model levels
-	  real,    pointer     :: cc(:,:)         ! cloud cover at model levels
+      !为rttov_scatt额外添加的水凝物变量
+      real,    pointer     :: scatt_qcw(:,:)  
+      real,    pointer     :: scatt_qrn(:,:)
+      real,    pointer     :: scatt_qci(:,:)
+	   real,    pointer     :: phm(:,:)        ! half-level pressure at model levels
+	   real,    pointer     :: cc(:,:)         ! cloud cover at model levels
       real,    pointer     :: rain(:,:)       ! rainfall rate in kg/m2/s
       real,    pointer     :: rh(:,:)         ! relative humility
-	  real,    pointer     :: sp(:,:)         ! solid precipitation
+	   real,    pointer     :: sp(:,:)         ! solid precipitation
       integer              :: superob_width = 1
       type (varbc_info_type)        :: varbc_info
       type (varbc_type),pointer     :: varbc(:)

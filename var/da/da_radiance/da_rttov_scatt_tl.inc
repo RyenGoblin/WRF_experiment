@@ -60,7 +60,6 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
      call da_error(__FILE__,__LINE__, &
         (/"profile allocation error"/))
    end if
-   
    allocate (profiles_tl(nprofiles), stat=alloc_status(2))
    call rttov_alloc_prof(        &
       & errorstatus,             &
@@ -75,7 +74,6 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
      call da_error(__FILE__,__LINE__, &
         (/"profile TL allocation error"/))
    end if
-   
    ! allocate input cld_profile arrays with the number of levels
    allocate (cld_profiles(nprofiles),stat=alloc_status(3))
    call rttov_alloc_scatt_prof(  &
@@ -91,7 +89,6 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
      call da_error(__FILE__,__LINE__, &
         (/" cld_profile allocation error"/))
    end if
-
    allocate (cld_profiles_tl(nprofiles),stat=alloc_status(4))
    call rttov_alloc_scatt_prof(  &
         errorstatus,             &
@@ -106,7 +103,6 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
      call da_error(__FILE__,__LINE__, &
         (/"cld_profile_TL allocation error"/))
    end if  
-   
    ! allocate input radiance array   
    call rttov_alloc_rad(         &
         errorstatus,             &
@@ -131,7 +127,6 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
      call da_error(__FILE__,__LINE__, &
        (/"radiance_TL allocation error"/))
    end if
-   
    !allocate chanprof structure
    allocate (chanprof(nchanprof), stat=alloc_status(5))
    if (alloc_status(5) /= 0) then
@@ -145,14 +140,12 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
      call da_error(__FILE__,__LINE__, &
         (/"emissivity allocation error"/))
    end if
-
    !allocate emissivity_tl structure   
    allocate (emissivity_tl(nchanprof), stat=alloc_status(7))
    if (alloc_status(7) /= 0) then
      call da_error(__FILE__,__LINE__, &
         (/"emissivity_tl allocation error"/))
    end if 
-
    !allocate calcemis structure
    allocate (calcemis(nchanprof), stat=alloc_status(8))
    if (alloc_status(8) /= 0) then
@@ -220,16 +213,16 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 		      cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
 		      profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
 		      profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		      cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-              cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-              cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
-		      cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+		      !cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+            cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+            cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
+		     !cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
 		     !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
          end if
      
 	 
 	 ! read 2 meter air variables
-	  profiles(iprof) % s2m % t   = aux_vars (iprof) % t2m
+	   profiles(iprof) % s2m % t   = aux_vars (iprof) % t2m
       profiles(iprof) % s2m % q   = aux_vars (iprof) % q2m
       profiles(iprof) % s2m % p   = con_vars (iprof) % ps
       profiles(iprof) % s2m % u   = aux_vars (iprof) % u10
@@ -273,19 +266,18 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
       profiles(iprof) % ctp         = 500.0  ! hPa, optional, for simple cloud
       profiles(iprof) % cfraction   = 0.0    ! 0-1, optional, for simple cloud
      !---------------------------读取profile_TL ------------------------------
-	  profiles_tl(iprof) % p(:)       = con_cld_vars_tl(iprof)%p(:)
+	   profiles_tl(iprof) % p(:)       = con_cld_vars_tl(iprof)%p(:)
       profiles_tl(iprof) % t(:)       = con_vars_tl(iprof)%t(:)
       profiles_tl(iprof) % q(:)       = con_vars_tl(iprof)%q(:)
-      profiles_tl(iprof) % s2m % p    = con_vars_tl(iprof)%ps
+    !  profiles_tl(iprof) % s2m % p    = con_vars_tl(iprof)%ps
 	 !从da_transform_xtoy_rttov_scatt获取cld_profile_tl
 	  cld_profiles_tl(iprof) % ph(:)     = con_cld_vars_tl(iprof)%ph(:)
 	  cld_profiles_tl(iprof) % clw(:)    = con_cld_vars_tl(iprof)%clw(:)
 	  cld_profiles_tl(iprof) % ciw(:)    = con_cld_vars_tl(iprof)%ciw(:)
-	  cld_profiles_tl(iprof) % rain(:)   = con_cld_vars_tl(iprof)%rain(:)
-	  cld_profiles_tl(iprof) % cc(:)     = con_cld_vars_tl(iprof)%cc(:)
+	  !cld_profiles_tl(iprof) % rain(:)   = con_cld_vars_tl(iprof)%rain(:)
+	  !cld_profiles_tl(iprof) % cc(:)     = con_cld_vars_tl(iprof)%cc(:)
 	  !cld_profiles_tl(iprof)% sp(:)     = con_cld_vars_tl(iprof)%sp(:)
    end do
-	
 	call  rttov_scatt_tl(   &
       & errorstatus,        & ! out
 	  & opts_scatt(inst),   & !
@@ -304,43 +296,43 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
       & radiance,           & ! inout
       & radiance_tl)          ! inout   
 	  
-   if ( print_detail_rad .or. errorstatus /= errorstatus_success ) then
-       write (message(1),*)  'rttov_tl error code     = ', errorstatus
-       write (message(2),*)  'nchanl                  = ', nchanl
-       write (message(3),*)  'nprofiles               = ', nprofiles
-       write (message(4),*)  'calcemis                = ', calcemis
-       write (message(5),*)  'profiles%s2m            = ', profiles(1)%s2m
-       write (message(6),*)  'profiles%skin           = ', profiles(1)%skin
-       write (message(7),*)  'profiles%zenangle       = ', profiles(1)%zenangle
-       write (message(8),*)  'profiles%azangle        = ', profiles(1)%azangle
-       write (message(9),*)  'profiles%p              = ', profiles(1)%p
-       write (message(10),*) 'profiles%t              = ', profiles(1)%t
-       write (message(11),*) 'profiles%q              = ', profiles(1)%q
-	   write (message(12),*) 'cld_profiles%ph         = ', cld_profiles(1)%ph
-	   write (message(13),*) 'cld_profiles%cc         = ', cld_profiles(1)%cc
-	   write (message(14),*) 'cld_profiles%clw        = ', cld_profiles(1)%clw
-	   write (message(15),*) 'cld_profiles%ciw        = ', cld_profiles(1)%ciw
-	   write (message(16),*) 'cld_profiles%rain       = ', cld_profiles(1)%rain
+   !if ( print_detail_rad .or. errorstatus /= errorstatus_success ) then
+   !    write (message(1),*)  'rttov_tl error code     = ', errorstatus
+   !    write (message(2),*)  'nchanl                  = ', nchanl
+   !    write (message(3),*)  'nprofiles               = ', nprofiles
+   !    write (message(4),*)  'calcemis                = ', calcemis
+   !    write (message(5),*)  'profiles%s2m            = ', profiles(1)%s2m
+   !    write (message(6),*)  'profiles%skin           = ', profiles(1)%skin
+   !    write (message(7),*)  'profiles%zenangle       = ', profiles(1)%zenangle
+   !    write (message(8),*)  'profiles%azangle        = ', profiles(1)%azangle
+   !    write (message(9),*)  'profiles%p              = ', profiles(1)%p
+   !    write (message(10),*) 'profiles%t              = ', profiles(1)%t
+   !    write (message(11),*) 'profiles%q              = ', profiles(1)%q
+	!   write (message(12),*) 'cld_profiles%ph         = ', cld_profiles(1)%ph
+	!   write (message(13),*) 'cld_profiles%cc         = ', cld_profiles(1)%cc
+	!   write (message(14),*) 'cld_profiles%clw        = ', cld_profiles(1)%clw
+	!   write (message(15),*) 'cld_profiles%ciw        = ', cld_profiles(1)%ciw
+	!   write (message(16),*) 'cld_profiles%rain       = ', cld_profiles(1)%rain
 	  !write (message(16),*) 'cld_profiles%sp         = ', cld_profiles(1)%sp
-       write (message(17),*) 'emissivity_out          = ', emissivity(:)%emis_out
-       write (message(18),*) 'radiance                = ', radiance%bt
-       write (message(19),*) 'profiles_tl%s2m         = ', profiles_tl(1)%s2m
-       write (message(20),*) 'profiles_tl%skin        = ', profiles_tl(1)%skin
-       write (message(21),*) 'profiles_tl%zenangle    = ', profiles_tl(1)%zenangle
-       write (message(22),*) 'profiles_tl%azangle     = ', profiles_tl(1)%azangle
-       write (message(23),*) 'profiles_tl%p           = ', profiles_tl(1)%p 
-       write (message(24),*) 'profiles_tl%t           = ', profiles_tl(1)%t 
-       write (message(25),*) 'profiles_tl%q           = ', profiles_tl(1)%q
-       write (message(12),*) 'cld_profiles_tl%ph      = ', cld_profiles_tl(1)%ph
-	   write (message(13),*) 'cld_profiles_tl%cc      = ', cld_profiles_tl(1)%cc
-	   write (message(14),*) 'cld_profiles_tl%clw     = ', cld_profiles_tl(1)%clw
-	   write (message(15),*) 'cld_profiles_tl%ciw     = ', cld_profiles_tl(1)%ciw
-	   write (message(16),*) 'cld_profiles_tl%rain    = ', cld_profiles_tl(1)%rain
-      !write (message(16),*) 'cld_profiles_tl%sp      = ', cld_profiles_tl(1)%sp	   
-       write (message(26),*) 'emissivity_out_tl       = ', emissivity_tl(:)%emis_out    
-       write (message(27),*) 'radiance_tl             = ', radiance_tl%bt
-       if ( errorstatus /= errorstatus_success ) call da_error(__FILE__,__LINE__,message(1:22))
-   end if
+   !    write (message(17),*) 'emissivity_out          = ', emissivity(:)%emis_out
+   !    write (message(18),*) 'radiance                = ', radiance%bt
+   !    write (message(19),*) 'profiles_tl%s2m         = ', profiles_tl(1)%s2m
+   !    write (message(20),*) 'profiles_tl%skin        = ', profiles_tl(1)%skin
+   !    write (message(21),*) 'profiles_tl%zenangle    = ', profiles_tl(1)%zenangle
+   !    write (message(22),*) 'profiles_tl%azangle     = ', profiles_tl(1)%azangle
+   !    write (message(23),*) 'profiles_tl%p           = ', profiles_tl(1)%p 
+   !    write (message(24),*) 'profiles_tl%t           = ', profiles_tl(1)%t 
+   !    write (message(25),*) 'profiles_tl%q           = ', profiles_tl(1)%q
+   !    write (message(12),*) 'cld_profiles_tl%ph      = ', cld_profiles_tl(1)%ph
+	!   write (message(13),*) 'cld_profiles_tl%cc      = ', cld_profiles_tl(1)%cc
+	!   write (message(14),*) 'cld_profiles_tl%clw     = ', cld_profiles_tl(1)%clw
+	!   write (message(15),*) 'cld_profiles_tl%ciw     = ', cld_profiles_tl(1)%ciw
+	!   write (message(16),*) 'cld_profiles_tl%rain    = ', cld_profiles_tl(1)%rain
+   !   !write (message(16),*) 'cld_profiles_tl%sp      = ', cld_profiles_tl(1)%sp	   
+   !    write (message(26),*) 'emissivity_out_tl       = ', emissivity_tl(:)%emis_out    
+   !    write (message(27),*) 'radiance_tl             = ', radiance_tl%bt
+   !    if ( errorstatus /= errorstatus_success ) call da_error(__FILE__,__LINE__,message(1:22))
+   !end if
    
    do n = 1, nprofiles
      tb(1:nchanl,n) = radiance_tl % bt((n-1)*nchanl+1:n*nchanl)

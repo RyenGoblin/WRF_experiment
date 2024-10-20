@@ -77,7 +77,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
       & nprofiles,               &
       & cld_profiles,            &
       & nlevels,                 &
-	  & use_totalice=.false.,    & ! false => separate ciw and snow; true => totalice
+	   & use_totalice=.false.,    & ! false => separate ciw and snow; true => totalice
       & asw=1,                   & ! Switch (1=allocate; 0=deallocate)
       & init =.true.,           &
 	  & mmr_snowrain=.false.)    ! snow/rain input units: false => kg/m2/s; true => kg/kg
@@ -135,25 +135,25 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    do iprof = 1, nprofiles
 
        if (use_totalice .eqv. .true.) then !使用totalice
-	      profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
+	     profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
 		  cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
 		  profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
 		  profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
 		  cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-          cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-         !cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%totalice(:) ! combined ice water and snow (kg/kg)
-          cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+        cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+        cld_profiles(iprof) % totalice(:) =  con_cld_vars(iprof)%ciw    (:) ! combined ice water and snow (kg/kg)
+        cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
 	   else                           
 	     !不使用totalice
 	      profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
-		  cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		  profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
-		  profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		  cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-          cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-          cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
-		  cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-		 !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
+		   cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		   profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
+		   profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		   cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+         cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+         cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
+		   cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+		   cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
        end if
      
 
@@ -207,7 +207,6 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
    !-----------------------------------
    !  calling RTTOV-SCATT forward model
    !----------------------------------
-
    call rttov_scatt(       &
       & errorstatus,       &   ! out
 	  & opts_scatt(inst),  &   ! in
@@ -247,7 +246,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%ph =', cld_profiles(1)%ph
 	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%cc =', cld_profiles(1)%cc
 	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%clw =', cld_profiles(1)%clw
-	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%ciw =', cld_profiles(1)%ciw
+	  !WRITE (UNIT=stderr,FMT=*) 'cld_profiles%ciw =', cld_profiles(1)%ciw
 	  WRITE (UNIT=stderr,FMT=*) 'cld_profiles%rain =', cld_profiles(1)%rain
 	 !WRITE (UNIT=stderr,FMT=*) 'cld_profiles%sp =', cld_profiles(1)%sp
       WRITE (UNIT=stderr,FMT=*) 'calcemis     = ', calcemis

@@ -140,11 +140,14 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
       iv%instid(i)%surftype(n)     = 0
       iv%instid(i)%snow_frac(n)     = 0.
 	  if (rttov_scatt .eqv. .true.) then
+        iv%instid(i)%scatt_qcw(:,n)=0.0
+        iv%instid(i)%scatt_qrn(:,n)=0.0
+        iv%instid(i)%scatt_qci(:,n)=0.0
 	     iv%instid(i)%phm(:,n)=0.0
-	  	 iv%instid(i)%rain(:,n) = 0.0
+	  	  iv%instid(i)%rain(:,n) = 0.0
 	     iv%instid(i)%cc(:,n) = 0.0
-		 iv%instid(i)%sp(:,n) =0.0
-		 iv%instid(i)%rh(:,n) =0.0
+		  iv%instid(i)%sp(:,n) =0.0
+		  iv%instid(i)%rh(:,n) =0.0
 	  end if
 	  
    end if

@@ -79,6 +79,10 @@ module da_rttov
 #include "rttov_scatt_ad.interface"
 #include "rttov_alloc_scatt_prof.interface"
 #include "rttov_scatt_setupindex.interface"
+#include "rttov_init_prof.interface"
+#include "rttov_init_scatt_prof.interface"
+#include "rttov_init_rad.interface"
+#include "rttov_print_info.interface"
    
 contains
 

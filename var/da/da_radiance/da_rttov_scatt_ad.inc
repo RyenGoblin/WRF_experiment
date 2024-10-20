@@ -17,7 +17,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
    real                ,  intent (in) :: tb(nchanl,nprofiles)
 
    ! local variables
-   integer             :: n, j, i, asw, nlevels, nchanprof,iprof
+   integer             :: n, j, i, asw, nlevels, nchanprof,iprof,unit1,unit2,unit3,unit4,lv
    Integer             :: alloc_status(18)
    
    ! RTTOV input parameters
@@ -40,7 +40,6 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
 
    nchanprof = nchanl*nprofiles
    nlevels = con_vars(1) % nlevels
-   
    
    !---------------------------给数据分配内存---------------------------
    alloc_status (:) = 0
@@ -83,7 +82,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
       & nprofiles,               &
       & cld_profiles,            &
       & nlevels,                 &
-	  & use_totalice =.false.,   & ! false => separate ciw and snow; true => totalice
+	   & use_totalice =.false.,   & ! false => separate ciw and snow; true => totalice
       & asw=1,                   & ! Switch (1=allocate; 0=deallocate)
       & init = .true.,           & 
 	  & mmr_snowrain =.false.)      ! snow/rain input units: false => kg/m2/s; true => kg/kg
@@ -99,7 +98,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
       & nprofiles,               &
       & cld_profiles_ad,         &
       & nlevels,                 &
-	  & use_totalice =.false.,   & ! false => separate ciw and snow; true => totalice
+	   & use_totalice =.false.,   & ! false => separate ciw and snow; true => totalice
       & asw=1,                   & 
       & init = .true.,           & 
 	  & mmr_snowrain =.false.)
@@ -167,7 +166,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
      call da_error(__FILE__,__LINE__, &
         (/"chanprof allocation error"/))
    end if
-
+   
    !------------------------生成通道、廓线和频率索引-------------------
    ! generate the chanprof array
    !确定哪些指定通道用于模拟
@@ -190,29 +189,30 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
       use_chan)
  
    !--------------------------------------读取廓线数据--------------------------------------------------------
-   do iprof = 1, nprofiles
+   !do iprof = 1, nprofiles
+   iprof = 1 
       
-	     if (use_totalice .eqv. .true.) then !使用totalice
-	          profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
-		      cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		      profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
-		      profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		      cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-              cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-             !cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%totalice(:) ! combined ice water and snow (kg/kg)
-              cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-	     else                           !不使用totalice
-	          profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:)  ! full level pressure (hPa)
-		      cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
-		      profiles(iprof)     % t   (:)     = con_cld_vars(iprof)%t       (:) ! temperature (K)
-		      profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		      cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
-              cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
-              cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
-		      cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
-		     !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp     (:) ! frozen precip. (kg/kg)
-         end if
-          
+	   if (use_totalice .eqv. .true.) then !使用totalice
+	      profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:) ! full level pressure (hPa)
+		   cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		   profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
+		   profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		   cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+         cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+         cld_profiles(iprof) % totalice(:) = con_cld_vars(iprof)%ciw     (:)  !combined ice water and snow (kg/kg)
+         !cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+         cld_profiles(iprof) % rain(:)     = 0.00
+	   else                           !不使用totalice
+	      profiles(iprof)     % p   (:)     = coefs(inst)%coef%ref_prfl_p (:)  ! full level pressure (hPa)
+		   cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
+		   profiles(iprof)     % t   (:)     = con_vars(iprof)%t       (:) ! temperature (K)
+		   profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
+		   !cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+         cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
+         cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
+		   !cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+		   !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp     (:) ! frozen precip. (kg/kg)
+      end if
    
       profiles(iprof) % skin % t          = aux_vars (iprof) % surft 
       profiles(iprof) % skin % surftype   = aux_vars (iprof) % surftype
@@ -240,15 +240,16 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
             profiles(iprof) % skin % fastem (5) = 0.3
          end if
       end if   
-      profiles(iprof) % s2m  % t    = aux_vars (n) % t2m
-      profiles(iprof) % s2m  % q    = aux_vars (n) % q2m
-      profiles(iprof) % s2m  % o    = 0.0 !aux_vars (n) % o3
-      profiles(iprof) % s2m  % p    = con_vars (n) % ps
-      profiles(iprof) % s2m  % u    = aux_vars (n) % u10
-      profiles(iprof) % s2m  % v    = aux_vars (iprof) % v10
 
+      profiles(iprof) % s2m  % t    = aux_vars (iprof) % t2m
+      profiles(iprof) % s2m  % q    = aux_vars (iprof) % q2m
+      profiles(iprof) % s2m  % o    = 0.0 !aux_vars (iprof) % o3
+      profiles(iprof) % s2m  % p    = con_vars (iprof) % ps
+      !profiles(iprof) % s2m  % p    = 1050.00
+      profiles(iprof) % s2m  % u    = aux_vars (iprof) % u10
+      profiles(iprof) % s2m  % v    = aux_vars (iprof) % v10
       profiles(iprof) % zenangle  = aux_vars (iprof) % satzen
-	  profiles(iprof) % azangle   = aux_vars (iprof) % satazi
+	   profiles(iprof) % azangle   = aux_vars (iprof) % satazi
       profiles(iprof) % elevation = 0.001* aux_vars(iprof) % elevation   ! km
       profiles(iprof) % latitude  = aux_vars(iprof) % rlat
 
@@ -261,21 +262,15 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
 
       profiles(iprof) % Be          = 0.0   ! optional, for zeeman effect for ssmis and amsua
       profiles(iprof) % cosbk       = 0.0    ! optional, for zeeman effect for ssmis and amsua
-
       profiles(iprof) % ctp         = 500.0  ! hPa, optional, for simple cloud
       profiles(iprof) % cfraction   = 0.0    ! 0-1, optional, for simple cloud
+   !end do
 
-   end do
-   
-    !在调用rttov_scatt_ad前，所有AD的输入和输出结构都必须初始化为0
-    call rttov_init_prof(profiles_ad)
-    call rttov_init_scatt_prof(cld_profiles_ad)
-	call rttov_init_rad(radiance_ad)
-	
+      
+
    !计算辐射扰动
    do n = 1, nprofiles
-       radiance_ad % bt ((n-1)*nchanl+1:n*nchanl) = tb(1:nchanl,n)
-       radiance_ad % total ((n-1)*nchanl+1:n*nchanl) = 0.0
+       radiance_ad % bt_clear ((n-1)*nchanl+1:n*nchanl) = tb(1:nchanl,n)
    end do  
 
    if ( coefs(inst)%coef%id_sensor == sensor_id_ir .or. &
@@ -351,20 +346,20 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
       !write (message(16),*) 'cld_profiles_ad%sp      = ', cld_profiles_ad(1)%sp
        write (message(21),*) 'emissivity_out_ad      = ', emissivity_ad(:)%emis_out
        write (message(22),*) 'radiance_ad            = ', radiance_ad%bt
-       do n = 1, nprofiles
-          con_vars_ad(n)%t(:)         = profiles_ad(n) % t(:)
-          con_vars_ad(n)%q(:)         = profiles_ad(n) % q(:)
-		  con_cld_vars_ad(n)%p(:)     = profiles_ad(n) % p(:)
-          con_vars_ad(n)%ps           = profiles_ad(n) % s2m % p
-	      con_cld_vars_ad(n)%ph(:)    = cld_profiles_ad(n) % ph(:)
-	      con_cld_vars_ad(n)%cc(:)    = cld_profiles_ad(n) % cc(:)
-	      con_cld_vars_ad(n)%clw(:)   = cld_profiles_ad(n) % clw(:)
-          con_cld_vars_ad(n)%ciw(:)   = cld_profiles_ad(n) % ciw(:)
-	      con_cld_vars_ad(n)%rain(:)  = cld_profiles_ad(n) % rain(:)
-	     !con_cld_vars_ad(n)%sp(:)    = cld_profiles_ad(n) % sp(:) 
-	  
-       end do
-   end if
+  end if
+  !------------------------将得到的扰动传出-------------------------
+  do n = 1, nprofiles
+      con_vars_ad(n)%t(:)         = profiles_ad(n) % t(:)
+      con_vars_ad(n)%q(:)         = profiles_ad(n) % q(:)
+		con_cld_vars_ad(n)%p(:)     = profiles_ad(n) % p(:)
+      con_vars_ad(n)%ps           = profiles_ad(n) % s2m % p
+	   con_cld_vars_ad(n)%ph(:)    = cld_profiles_ad(n) % ph(:)
+	   con_cld_vars_ad(n)%cc(:)    = cld_profiles_ad(n) % cc(:)
+	   con_cld_vars_ad(n)%clw(:)   = cld_profiles_ad(n) % clw(:)
+      con_cld_vars_ad(n)%ciw(:)   = cld_profiles_ad(n) % ciw(:)
+	   con_cld_vars_ad(n)%rain(:)  = cld_profiles_ad(n) % rain(:)
+	   !con_cld_vars_ad(n)%sp(:)    = cld_profiles_ad(n) % sp(:) 
+	end do
  
    !--------------------------释放变量内存------------------------
    ! deallocate profile arrays

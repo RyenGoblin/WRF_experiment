@@ -31,6 +31,13 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
    !----------------
    integer               :: mxchn
    integer(jpim)         :: id_sensor
+   !--------------------------------------------------------------
+   !  1.0 setup RTTOV instrument triplets from namelist parameter
+   !--------------------------------------------------------------   
+   
+   mxchn           =  MAXVAL(nchan)
+   err_unit        =  stderr
+   verbosity_level =  rtminit_print
    
    allocate (coefs(nsensor))
    allocate (opts(nsensor))
@@ -39,6 +46,11 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
    allocate (coefs_channels(mxchn,nsensor))
    allocate (coefs_scatt(nsensor))
    allocate (opts_scatt(nsensor))
+
+   if ( rttov_emis_atlas_ir > 0 .or. rttov_emis_atlas_mw > 0 ) then
+      allocate (atlas_type(nsensor))
+      allocate (atlas_id(nsensor))
+   end if
    
    sensor (1,1:nsensor)  = rtminit_platform (1:nsensor) 
    sensor (2,1:nsensor)  = rtminit_satid    (1:nsensor)
@@ -59,12 +71,16 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
       call da_message(message(1:6))
    end if
 
-   !read and initialize coefficients
-   !rttov_read_coefs and rttov_init_coefs are called for each instrument
+   !-----------------------------------------------------------
+   ! 2.0 read and initialize coefficients
+   !     rttov_read_coefs and rttov_init_coefs are called for each instrument
+   !-----------------------------------------------------------
 
    file_path    = 'rttov_coeffs/'
    file_suffix  = '.dat'
    coef_prefix  = 'rtcoef_'
+   scaer_prefix = 'scaercoef_'  ! scattering coefficients - aerosols
+   sccld_prefix = 'sccldcoef_'  ! scattering coefficients - clouds
    mietable_path = 'mietable/'
 
    write(unit=message(1),fmt='(a)') 'Read in the RTTOV coef files for the following sensors'
@@ -91,6 +107,9 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
 	  
       !construct the full path name to the coef file
       coef_filename = trim(file_path)//trim(coef_prefix)//trim(iv%instid(n)%rttovid_string_coef)//trim(file_suffix)
+      scaer_filename = trim(file_path)//trim(scaer_prefix)//trim(iv%instid(n)%rttovid_string_coef)//trim(file_suffix)
+      sccld_filename = trim(file_path)//trim(sccld_prefix)//trim(iv%instid(n)%rttovid_string_coef)//trim(file_suffix)
+	  
 	  !增加mietable系数文件路径,暂时设置为fy3_mwhs2的mietable文件
 	  mietable_filename= trim(file_path)//trim(mietable_path)//'mietable_fy3_mwhs2.dat' 
 	  
@@ -104,7 +123,7 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
         & errorstatus,       &   ! out
         & coefs(n),          &   ! out
         & opts(n),           &   ! in
-      ! & channels     = coefs_channels(1:nchan(n),n),  &  !如果使用scatt要求读取所有通道的信息，所以channels选项不应该被使用
+        & channels     = coefs_channels(1:nchan(n),n),  &  !如果使用scatt要求读取所有通道的信息，所以channels选项不应该被使用
         & file_coef    = trim(coef_filename),  &
         & file_scaer   = trim(scaer_filename), &
         & file_sccld   = trim(sccld_filename) )
@@ -137,6 +156,7 @@ subroutine da_rttov_scatt_init(iv,ob,nsensor,nchan)
             atlas_id(n) = rttov_emis_atlas_mw !(namelist variable, can either be 1=TELSEM2 or 2=CNRW)
          end if
       end if
+      call rttov_print_info(coefs(n))
    end do
 
    deallocate (sensor)
