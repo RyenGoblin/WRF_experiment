@@ -41,8 +41,10 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
 
    num_proc_domain = 0
 
-      do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
+      write(*,*)"rttov_scatt option is",rttov_scatt
+      write(*,*)"you are using allsky assimilation,so nrej_si and nrej_clw will be 0"
 
+      do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
          if (iv%instid(i)%info%proc_domain(1,n)) &
                num_proc_domain = num_proc_domain + 1
 
@@ -59,7 +61,7 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
             if (iv%instid(i)%info%proc_domain(1,n)) &
                nrej_mixsurface = nrej_mixsurface + 1
          end if
-
+  
          !  b.  reject channels 1 and 10 over land/sea-ice/snow
          !------------------------------------------------------
          if (isflg > 0) then
@@ -83,24 +85,28 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
          ! if (abs(satzen) > 45.0) &
          !    iv%instid(i)%tb_qc(:,n)  =  qc_bad
 
-         !  d. check cloud/precipitation
+         !  d. check cloud/precipitation,如果使用rttov_scatt全空同化，将会跳过去云部分
          !-----------------------------------------------------------
-         if (ob%instid(i)%tb(1,n) > 0.0 .and. ob%instid(i)%tb(10,n) > 0.0 ) then
-            si = ob%instid(i)%tb(1,n)-ob%instid(i)%tb(10,n)
-            if (si >= 4.0) then
-               iv%instid(i)%tb_qc(:,n) = qc_bad
-               iv%instid(i)%cloud_flag(:,n) = qc_bad
-               if (iv%instid(i)%info%proc_domain(1,n)) &
-                  nrej_si = nrej_si + 1
-            end if
-         end if
 
-         if (iv%instid(i)%clwp(n) >= 0.2) then
-            iv%instid(i)%tb_qc(:,n) = qc_bad
-            iv%instid(i)%cloud_flag(:,n) = qc_bad
-            if (iv%instid(i)%info%proc_domain(1,n)) &
-               nrej_clw = nrej_clw + 1
-         end if
+        if (rttov_scatt .eqv. .false.) then
+            if (ob%instid(i)%tb(1,n) > 0.0 .and. ob%instid(i)%tb(10,n) > 0.0 ) then
+                si = ob%instid(i)%tb(1,n)-ob%instid(i)%tb(10,n)
+                if (si >= 4.0) then
+                   iv%instid(i)%tb_qc(:,n) = qc_bad
+                   iv%instid(i)%cloud_flag(:,n) = qc_bad
+                   if (iv%instid(i)%info%proc_domain(1,n)) &
+                      nrej_si = nrej_si + 1
+                end if
+             end if
+        
+
+             if (iv%instid(i)%clwp(n) >= 0.2) then
+                iv%instid(i)%tb_qc(:,n) = qc_bad
+                iv%instid(i)%cloud_flag(:,n) = qc_bad
+                if (iv%instid(i)%info%proc_domain(1,n)) &
+                   nrej_clw = nrej_clw + 1
+            end if
+        end if
 
          !  e. check surface height/pressure
          !------------------------------------------------------
@@ -159,6 +165,8 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
             end if
          end do ! chan
       end do ! end loop pixel
+      write(*,*)"nrej_si is",nrej_si
+      write(*,*)"nrej_clw is",nrej_clw
 
    ! Do inter-processor communication to gather statistics.
 

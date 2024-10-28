@@ -152,8 +152,8 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
 			 con_cld_vars(n) % p(:)        = coefs(i)%coef%ref_prfl_p(:)
 		    con_cld_vars(n) % ph(:)       = iv%instid(i)%phm(:,n)
 		    con_cld_vars(n) % cc(:)       = iv%instid(i)%cc(:,n)
-		    con_cld_vars(n) % clw(:)      = iv%instid(i)%qcw(:,n)
-		    con_cld_vars(n) % ciw(:)      = iv%instid(i)%qci(:,n)
+		    con_cld_vars(n) % clw(:)      = iv%instid(i)%scatt_qcw(:,n)
+		    con_cld_vars(n) % ciw(:)      = iv%instid(i)%scatt_qci(:,n)
           con_cld_vars(n) % rain(:)     = iv%instid(i)%rain(:,n)
 		    con_cld_vars(n) % sp(:)       = iv%instid(i)%sp(:,n)
           ! con_cld_vars(n) % rain(:)     = iv%instid(i)%rain(:,n)
@@ -587,7 +587,6 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
          end if
       end do
 #endif
-
       if (d_num_rad > 0) then
          do n=1,d_num_rad
             deallocate (d_con_vars(n) % t)

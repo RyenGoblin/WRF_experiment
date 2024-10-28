@@ -114,8 +114,8 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
 			 con_cld_vars(n) % p(:)  = coefs(i)%coef%ref_prfl_p(:)
 			 con_cld_vars(n) % ph(:) = iv%instid(i)%phm(:,n)
 		    con_cld_vars(n) % cc(:) = iv%instid(i)%cc(:,n)
-		    con_cld_vars(n) % clw(:)= iv%instid(i)%qcw(:,n)
-		    con_cld_vars(n) % ciw(:)= iv%instid(i)%qci(:,n)
+		    con_cld_vars(n) % clw(:)= iv%instid(i)%scatt_qcw(:,n)
+		    con_cld_vars(n) % ciw(:)= iv%instid(i)%scatt_qci(:,n)
           con_cld_vars(n) % rain(:)= iv%instid(i)%rain(:,n)
 		    con_cld_vars(n) % sp(:)  = iv%instid(i)%sp(:,n)
 
@@ -477,8 +477,8 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
 
          !unit1=1 
          !unit2=2
-         unit3=3
-         unit4=4
+         !unit3=3
+         !unit4=4
          !unit5=5
          !open(unit=unit1,file='d_con_vars_ad(n) % t')
          !do lv=1,nlevels
@@ -649,7 +649,6 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
          end do
          call da_interp_lin_3d_adj(jo_grad_x%qci,iv%instid(i)%info,temp_qci)
          deallocate(temp_qci)
-
       end if
 
 
@@ -659,20 +658,20 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
             deallocate (con_vars(n)    % q)
             deallocate (con_vars_ad(n) % t)
             deallocate (con_vars_ad(n) % q)
-			deallocate (con_cld_vars(n)% p)
-			deallocate (con_cld_vars(n)% ph)
-			deallocate (con_cld_vars(n)% clw)
-			deallocate (con_cld_vars(n)% ciw)
-			deallocate (con_cld_vars(n)% cc)
-			deallocate (con_cld_vars(n)% rain)
-			deallocate (con_cld_vars(n)% sp)
-			deallocate (con_cld_vars_ad(n)% p)
-			deallocate (con_cld_vars_ad(n)% ph)
-			deallocate (con_cld_vars_ad(n)% clw)
-			deallocate (con_cld_vars_ad(n)% ciw)
-			deallocate (con_cld_vars_ad(n)% cc)
-			deallocate (con_cld_vars_ad(n)% rain)
-			deallocate (con_cld_vars_ad(n)% sp)
+			   deallocate (con_cld_vars(n)% p)
+			   deallocate (con_cld_vars(n)% ph)
+			   deallocate (con_cld_vars(n)% clw)
+			   deallocate (con_cld_vars(n)% ciw)
+			   deallocate (con_cld_vars(n)% cc)
+		      deallocate (con_cld_vars(n)% rain)
+			   deallocate (con_cld_vars(n)% sp)
+			   deallocate (con_cld_vars_ad(n)% p)
+			   deallocate (con_cld_vars_ad(n)% ph)
+			   deallocate (con_cld_vars_ad(n)% clw)
+			   deallocate (con_cld_vars_ad(n)% ciw)
+			   deallocate (con_cld_vars_ad(n)% cc)
+			   deallocate (con_cld_vars_ad(n)% rain)
+			   deallocate (con_cld_vars_ad(n)% sp)
             if ( use_rttov_kmatrix ) then
                deallocate (con_vars(n) % t_jac)
                deallocate (con_vars(n) % q_jac)
@@ -684,8 +683,8 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
          deallocate (aux_vars)
          deallocate (con_vars_ad)
          deallocate (model_mr)
-		 deallocate (con_cld_vars)
-		 deallocate (con_cld_vars_ad)
+         deallocate (con_cld_vars)
+		   deallocate (con_cld_vars_ad)
       end if
    end do        ! end loop for sensor
 

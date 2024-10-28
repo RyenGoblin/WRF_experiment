@@ -213,7 +213,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 		      cld_profiles(iprof) % ph  (:)     = con_cld_vars(iprof)%ph      (:) ! half level pressure (hPa)
 		      profiles(iprof)     % t   (:)     = con_vars(iprof)%t           (:) ! temperature (K)
 		      profiles(iprof)     % q   (:)     = con_vars(iprof)%q           (:) ! specific humility
-		      !cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
+		      cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
             cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
             cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
 		     !cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)

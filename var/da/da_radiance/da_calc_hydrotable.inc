@@ -12,11 +12,6 @@ subroutine da_calc_hydrotable (nlevels,n1,n2,grid,iv,rain,fi,sp,phm)
   real, allocatable :: a(:,:),Vt(:,:),rho(:,:)
   integer :: n,k,inst,nlevels,n1,n2,unit1,unit2,unit3,unit4,unit5,i,l
   
-  unit1=10
-  unit2=11
-  unit3=12
-  unit4=14
-  write(*,*)"in da_calc_hydrotable the nlevels is ",nlevels
 
   allocate(iv_pb(nlevels,n1:n2))
   allocate(a(nlevels,n1:n2))
@@ -31,12 +26,6 @@ subroutine da_calc_hydrotable (nlevels,n1,n2,grid,iv,rain,fi,sp,phm)
       call da_interp_lin_3d (grid%xb%t, iv%instid(inst)%info, iv_pb(:,n1:n2))
       write(*,*)"pb interpolation success!"
       !输出pb文件进行检查
-      open(unit=unit1,file='pb.txt', status='unknown')
-      do i = 1,50
-        write(unit1,*)iv_pb(i,n)
-      end do
-      close(unit1)
-      write(*,*)"pb.txt output success!"
 
        do k = 1,nlevels
   !计算雨水流量
@@ -45,7 +34,6 @@ subroutine da_calc_hydrotable (nlevels,n1,n2,grid,iv,rain,fi,sp,phm)
 	      rho(k,n1:n2) = coefs(inst)%coef%ref_prfl_p (k)/(287.05*iv%instid(inst)%t(k,n1:n2)) !计算每层的空气总密度
 	      !rain(k,n1:n2) = rho(k,n1:n2)*Vt(k,n1:n2)*(iv%instid(inst)%scatt_qrn(k,n1:n2)/iv%instid(inst)%scatt_qrn(k,n1:n2)+1)
           rain(k,n1:n2) = 0.00
-          !write(*,*)"rain calculate success!"
   !计算云覆盖
           do n=n1,n2
              if (coefs(inst)%coef%ref_prfl_p (k) < 450) then
@@ -69,38 +57,8 @@ subroutine da_calc_hydrotable (nlevels,n1,n2,grid,iv,rain,fi,sp,phm)
            
        do k=2,nlevels
            phm(k,n1:n2) = 0.5 * (coefs(inst)%coef%ref_prfl_p (k-1) + coefs(inst)%coef%ref_prfl_p (k)) !其他半层气压采用对数插值方案
-       end do
-       write(*,*)"phm calculate success!"
-       write(*,*)"iv_pb array size",shape(iv_pb)
-       write(*,*)"phm array size",shape(phm)
-       write(*,*)"rain array size",shape(rain)
-       write(*,*)"cc array size",shape(fi)
-
-
-   
+       end do   
    end do
-   !输出计算出的水凝物到文件内
-    !open(unit=unit2,file='rain.txt', status='unknown')
-    !do l = 1,nlevels
-    !    write(unit2,*)(rain(l,n),n=n1,n2)    
-    !end do
-    !close(unit2)
-    !write(*,*)"rain.txt output success!"
-    !open(unit=unit3,file='cc.txt', status='unknown')
-    !do l = 1,nlevels
-    !    write(unit3,*)(fi(l,n),n=n1,n2)
-    !end do
-    !close(unit3)
-    !write(*,*)"cloud_cover.txt output success!"
-    !open(unit=unit4,file='ph.txt', status='unknown')
-    !do l = 1,nlevels+1
-    !    write(unit4,*)(phm(l,n),n=n1,n2)
-    !end do
-    !close(unit4)
-   ! write(*,*)"half_pressure.txt output success!"   
-
-
-
 
   deallocate(iv_pb)
   deallocate(a)
