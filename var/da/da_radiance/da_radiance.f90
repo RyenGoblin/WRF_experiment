@@ -51,7 +51,8 @@ module da_radiance
       tovs_min_transfer,use_error_factor_rad,num_fgat_time,stdout,trace_use, &
       qc_good, qc_bad,myproc,biascorr,thinning,thinning_mesh, &
       rad_monitoring, monitor_on, kts, kte, kms, kme, calc_weightfunc, &
-      use_mwtsobs, use_mwhsobs, use_mwhs2obs, use_atmsobs, use_amsr2obs, use_ahiobs,use_gmiobs, &
+      use_mwtsobs, use_mwts2obs, use_mwts3obs, use_mwhsobs, &
+      use_mwhs2obs, use_mwhs2eobs, use_atmsobs, use_amsr2obs, use_ahiobs,use_gmiobs, &
       use_hirs4obs, use_mhsobs,bufr_year, bufr_month,bufr_day,bufr_hour, &
       bufr_minute, bufr_second,bufr_solzen, bufr_station_height, &
       bufr_landsea_mask,bufr_solazi,tovs_end, max_tovs_input, bufr_satzen, nchan_mhs, &
@@ -87,7 +88,8 @@ module da_radiance
       tovs_send_pe, tovs_recv_pe, tovs_send_start, tovs_send_count, &
       tovs_recv_start,con_vars_type,aux_vars_type, datalink_type,da_qc_amsub, &
       da_qc_amsua,da_biascorr, da_detsurtyp,da_biasprep, &
-      da_qc_rad, da_cld_eff_radius, da_read_biascoef
+      da_qc_rad, da_cld_eff_radius, da_read_biascoef, &
+      da_qc_mwhs2, da_qc_mwhs2e, da_qc_mwts2, da_qc_mwts3
    use da_reporting, only : da_message, da_warning, message, da_error
 #ifdef RTTOV
    use da_rttov, only : da_rttov_init, da_get_innov_vector_rttov , &
@@ -128,6 +130,9 @@ contains
 #include "da_read_obs_bufrtovs.inc"
 #include "da_read_obs_fy3.inc"
 #include "da_read_obs_hdf5mwhs2.inc"
+#include "da_read_obs_hdf5mwhs2e.inc"  
+#include "da_read_obs_hdf5mwts2.inc"
+#include "da_read_obs_hdf5mwts3.inc"
 #include "da_read_obs_bufratms.inc"
 #include "ATMS_Spatial_Average.inc"
 #include "da_read_obs_bufrairs.inc"

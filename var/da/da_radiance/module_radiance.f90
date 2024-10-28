@@ -79,7 +79,7 @@ module module_radiance
   ! cf. RTTOV-11 Users Guide Table 2
   ! index 19 is sentinel3 in Table 2, here we keep it as tiros for 
   ! WRFDA backward compatibility
-  Character (len=8), Parameter :: rttov_platform_name(1:37) =          &
+  Character (len=9), Parameter :: rttov_platform_name(1:59) =          &
      & (/ 'noaa    ', 'dmsp    ', 'meteosat', 'goes    ', 'gms     ',  &
         & 'fy2     ', 'trmm    ', 'ers     ', 'eos     ', 'metop   ',  &
         & 'envisat ', 'msg     ', 'fy1     ', 'adeos   ', 'mtsat   ',  &
@@ -87,10 +87,14 @@ module module_radiance
         & 'kalpana ', 'reserved', 'fy3     ', 'coms    ', 'meteor-m',  &
         & 'gosat   ', 'calipso ', 'reserved', 'gcom-w  ', 'nimbus  ',  &
         & 'himawari', 'mtg     ', 'saral   ', 'metop-ng', 'landsat ',  &
-        & 'jason   ', 'gpm     '/)
+        & 'jason   ', 'gpm     ','insat1  ', 'insat2  ', 'insat3  ',  &
+        & 'ground   ', 'dscovr   ', 'clarreo  ', 'ticfire  ', 'aircraft ',  &
+        & 'iss      ', 'hj1      ', 'gkompsat2', 'gcom-c   ', 'smos     ',  &
+        & 'ors      ', 'fy4      ', 'tropics  ', 'gf5      ', 'hy2      ',  &
+        & 'cloudsat ', 'cloudcore', 'forum    ', 'tempestd ' /)
   ! cf. RTTOV-11 Users Guide Table 3
   ! List of instruments  !!!! HIRS is number 0
-  CHARACTER(LEN=8), dimension(0:88):: rttov_inst_name =                &
+  CHARACTER(LEN=8), dimension(0:140):: rttov_inst_name =                &
      & (/ 'hirs    ', 'msu     ', 'ssu     ', 'amsua   ', 'amsub   ',  &
         & 'avhrr   ', 'ssmi    ', 'vtpr1   ', 'vtpr2   ', 'tmi     ',  &
         & 'ssmis   ', 'airs    ', 'hsb     ', 'modis   ', 'atsr    ',  &
@@ -108,7 +112,18 @@ module module_radiance
         & 'ici     ', 'gmi     ', 'mwts2   ', 'mwhs2   ', 'aster   ',  &
         & 'hatpro  ', 'mtvzagy ', 'metimage', 'mws     ', 'mwi     ',  &
         & 'epic    ', 'mrir    ', 'si      ', 'mrfirs  ', 'mbfiri  ',  &
-        & 'lhr     ', 'ismar   ', 'mersi1  ', 'mersi2  ' /)
+        & 'lhr     ', 'ismar   ', 'mersi1  ', 'mersi2  ', 'ecostres',  &
+        & 'irmss   ', 'olci    ', 'thir    ', 'ami     ', 'ikfs2   ',  &
+        & 'li      ', 'sgli    ', 'hiras   ', 'giirs   ', 'agri    ',  &
+        & 'pmr     ', 'miras   ', 'cowvr   ', 'tropics ', 'vims    ',  &
+        & 'dpr     ', 'mwri    ', 'cpr     ', 'saphirng', 'forum   ',  &
+        & 'tempest ', 'marss   ', 'virr    ', 'sirs    ', 'hirasfsr',  &
+        & 'hrir    ', 'amrc    ', 'msugs   ', 'hytes   ', 'gems1   ',  &
+        & 'msi     ', 'hyms    ', 'tir     ', 'sbg     ', 'gome2   ',  &
+        & 'saphirhy', 'aws     ', 'cmimmw  ', 'msi     ', 'tropomi ',  &
+        & 'sentinl5', 'mersill ', 'mwts3   ', 'hiras2  ', 'polsir  ',  &
+        & 'esmr    ', 'nems    ', 'cpr     ', 'ssh     ', 'amsuamhs',  &
+        & 'mwhs2e  '  /)
 
   ! cf. rttov_platform_name above and CRTM: v2.1.3 User Guide Table B.1
   ! n=noaa; f=dmsp; g=goes; eos-2/1=aqua/terra;
@@ -116,7 +131,7 @@ module module_radiance
   ! For satellite names that can not be directly mapped here to names
   ! used in crtm coeff names, they will be re-set in
   ! da_crtm_sensor_descriptor.inc
-  Character (len=8), Parameter :: crtm_platform_name(1:37) =           &
+  Character (len=9), Parameter :: crtm_platform_name(1:59) =           &
      & (/ 'n       ', 'f       ', 'm       ', 'g       ', 'gms     ',  &
         & 'xxxxxxxx', 'trmm    ', 'ers     ', 'eos     ', 'metop   ',  &
         & 'envisat ', 'msg     ', 'xxxxxxxx', 'xxxxxxxx', 'mt      ',  &
@@ -124,14 +139,18 @@ module module_radiance
         & 'kalpana ', 'tiros   ', 'fy3     ', 'coms    ', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'reserved', 'gcom-w  ', 'xxxxxxxx',  &
         & 'himawari', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
-        & 'xxxxxxxx', 'gpm     '/)
+        & 'xxxxxxxx', 'gpm     ', 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx', &
+        & 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx',  &
+        & 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx',  &
+        & 'xxxxxxxxx', 'fy4      ', 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx',  &
+        & 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx', 'xxxxxxxxx' /)
   ! cf. rttov_inst_name above and CRTM: v2.1.3 User Guide Table B.1
   ! List of instruments  !!!! HIRS is number 0
   ! xxxxxxxx means crtm does not have corresponding coefficient file.
   ! For instrument names that can not be directly mapped here to names
   ! used in crtm coeff names, they will be re-set in
   ! da_crtm_sensor_descriptor.inc
-  Character (len=8), Dimension(0:88) :: crtm_sensor_name  =            &
+  Character (len=8), Dimension(0:140) :: crtm_sensor_name  =            &
      & (/ 'hirs    ', 'msu     ', 'ssu     ', 'amsua   ', 'amsub   ',  &
         & 'avhrr   ', 'ssmi    ', 'xxxxxxxx', 'spare   ', 'tmi     ',  &
         & 'ssmis   ', 'airs    ', 'hsb     ', 'modis   ', 'atsr    ',  &
@@ -146,10 +165,21 @@ module module_radiance
         & 'xxxxxxxx', 'ahi     ', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'amsr2   ', 'vissr   ',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
-        & 'xxxxxxxx', 'gmi     ', 'xxxxxxxx', 'mwhs2   ', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'gmi     ', 'mwts2   ', 'mwhs2   ', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
-        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx'/)
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'mwts3   ', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'mwhs2e  ' /)
 
 #ifdef RTTOV
    type (rttov_coefs), allocatable   :: coefs(:)     ! coefficients structure

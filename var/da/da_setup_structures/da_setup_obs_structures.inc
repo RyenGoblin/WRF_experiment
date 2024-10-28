@@ -62,13 +62,16 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_amsuaobs         = .false.
       use_amsubobs         = .false.
       use_mwtsobs          = .false.
+      use_mwts2obs         = .false.
+      use_mwts3obs         = .false.
       use_mwhsobs          = .false.
+      use_mwhs2obs         = .false.
+      use_mwhs2eobs         = .false.
       use_atmsobs          = .false.
       use_airsobs          = .false.
       use_eos_amsuaobs     = .false.
       use_hsbobs           = .false.
       use_ahiobs           = .false.
-      use_mwhs2obs         = .false.
       use_gmiobs           = .false.
       use_goesabiobs       = .false.
       use_obsgts           = .false.
@@ -107,7 +110,8 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_ssmisobs .OR. use_hirs4obs .OR. use_mhsobs .OR. use_pseudo_rad .OR. &
       use_mwtsobs  .OR. use_mwhsobs .OR. use_atmsobs .OR. use_simulated_rad .OR. &
       use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs .OR. use_goesimgobs .OR. &
-      use_ahiobs .OR. use_mwhs2obs .OR. use_gmiobs .OR. use_goesabiobs) then
+      use_ahiobs .OR. use_mwhs2obs .OR. use_gmiobs .OR. use_goesabiobs .OR. &
+      use_mwhs2eobs .OR. use_mwts2obs .OR. use_mwts3obs) then
       use_rad = .true.
    else
       use_rad = .false.
@@ -153,13 +157,16 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_amsuaobs         = .false.
       use_amsubobs         = .false.
       use_mwtsobs          = .false.
+      use_mwts2obs         = .false.
+      use_mwts3obs         = .false.
       use_mwhsobs          = .false.
+      use_mwhs2obs         = .false.
+      use_mwhs2eobs        = .false.
       use_atmsobs          = .false.
       use_airsobs          = .false.
       use_eos_amsuaobs     = .false.
       use_hsbobs           = .false.
       use_ahiobs           = .false.
-      use_mwhs2obs         = .false.
       use_gmiobs           = .false.
       use_goesabiobs       = .false.
       use_obsgts           = .false.
