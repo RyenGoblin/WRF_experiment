@@ -1,4 +1,4 @@
-subroutine da_read_obs_hdf5mwts3 (iv, infile_tb)
+subroutine da_read_obs_hdf5mwts3e (iv, infile_tb)
    !--------------------------------------------------------
    !  Purpose: read in FY3E MWTS3 Level-1 data in HDF5 format
    !           and form innovation structure
@@ -100,14 +100,14 @@ subroutine da_read_obs_hdf5mwts3 (iv, infile_tb)
    integer(i_kind),allocatable  :: ptotal(:)
    real,allocatable             :: in(:), out(:)
    
-   if (trace_use) call da_trace_entry("da_read_obs_hdf5mwts3")
+   if (trace_use) call da_trace_entry("da_read_obs_hdf5mwts3e")
 
    !  0.0  Initialize variables
    !-----------------------------------
    head_allocated = .false.
    platform_id  = 23  ! Table-2 Col 1 corresponding to 'fy3'
    satellite_id = 5   ! Table-2 Col 3 corresponding to 'E'
-   sensor_id    = 132  ! Table-3 Col 2 corresponding to 'mwts3'
+   sensor_id    = 132  ! Table-3 Col 2 corresponding to 'mwts3e'
 
    allocate(ptotal(0:num_fgat_time))
    ptotal(0:num_fgat_time) = 0
@@ -129,7 +129,7 @@ subroutine da_read_obs_hdf5mwts3 (iv, infile_tb)
    if (inst == 0) then
       call da_warning(__FILE__,__LINE__, &
           (/"The combination of Satellite_Id and Sensor_Id for MWTS-3e is not found"/))
-      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts3")
+      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts3e")
       return
    end if
 
@@ -138,12 +138,12 @@ subroutine da_read_obs_hdf5mwts3 (iv, infile_tb)
    if(iret.lt.0)then
       call da_warning(__FILE__,__LINE__, &
            (/"Problems in Initializing HDF5 library. Can not read MWTS-3 HDF data. "/))
-      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts3")
+      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts3e")
       return
    endif
 
    nchan = iv%instid(inst)%nchan
-   write(unit=stdout,fmt=*)'mwts3 nchan: ',nchan
+   write(unit=stdout,fmt=*)'mwts3e nchan: ',nchan
 
    ! 1.0 Assign file names and prepare to read mwhs2 files
    !-------------------------------------------------------------------------
@@ -176,7 +176,7 @@ subroutine da_read_obs_hdf5mwts3 (iv, infile_tb)
    if ( nfile == 0 ) then
       call da_warning(__FILE__,__LINE__, &
          (/"No valid MWTS-3e .hdf file found."/))
-      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts3")
+      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts3e")
       return
    end if
 
@@ -683,7 +683,7 @@ subroutine da_read_obs_hdf5mwts3 (iv, infile_tb)
       call da_warning(__FILE__,__LINE__,message(1:1))
    endif
 
-   write(unit=stdout,fmt='(a)') 'mwts3 data counts: '
+   write(unit=stdout,fmt='(a)') 'mwts3e data counts: '
    write(stdout,fmt='(a,i7)') ' In file: ',num_mwts3_file
    write(stdout,fmt='(a,i7)') ' Global : ',num_mwts3_global
    write(stdout,fmt='(a,i7)') ' Local  : ',num_mwts3_local
@@ -717,12 +717,12 @@ subroutine da_read_obs_hdf5mwts3 (iv, infile_tb)
    deallocate( p )
    deallocate(ptotal)
 
-   if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts3")
+   if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts3e")
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with HDF5 library"/))
 #endif
 
-end subroutine da_read_obs_hdf5mwts3
+end subroutine da_read_obs_hdf5mwts3e
 
 
 

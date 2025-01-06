@@ -216,7 +216,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 		      !cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
             cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
             cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
-		     !cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+		      cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
 		     !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp      (:) ! kg/m2/s
          end if
      
@@ -274,7 +274,7 @@ subroutine da_rttov_scatt_tl(inst, nchanl, nprofiles, con_vars, aux_vars,con_cld
 	  cld_profiles_tl(iprof) % ph(:)     = con_cld_vars_tl(iprof)%ph(:)
 	  cld_profiles_tl(iprof) % clw(:)    = con_cld_vars_tl(iprof)%clw(:)
 	  cld_profiles_tl(iprof) % ciw(:)    = con_cld_vars_tl(iprof)%ciw(:)
-	  !cld_profiles_tl(iprof) % rain(:)   = con_cld_vars_tl(iprof)%rain(:)
+	  cld_profiles_tl(iprof) % rain(:)   = con_cld_vars_tl(iprof)%rain(:)
 	  !cld_profiles_tl(iprof) % cc(:)     = con_cld_vars_tl(iprof)%cc(:)
 	  !cld_profiles_tl(iprof)% sp(:)     = con_cld_vars_tl(iprof)%sp(:)
    end do

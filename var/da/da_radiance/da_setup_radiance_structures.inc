@@ -100,6 +100,24 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          call da_read_obs_fy3('mwts ', iv, filename)
       end if
 
+      if (use_mwts2cobs) then
+         write(unit=stdout, fmt='(a)') 'Reading radiance 1b data from mwts2c.hdf'
+         filename = 'mwts2c'
+         call da_read_obs_hdf5mwts2c(iv, filename)
+      end if 
+
+      if (use_mwts2dobs) then
+         write(unit=stdout, fmt='(a)') 'Reading radiance 1b data from mwts2d.hdf'
+         filename = 'mwts2d'
+         call da_read_obs_hdf5mwts2d(iv, filename)
+      end if 
+
+      if (use_mwts3eobs) then
+         write(unit=stdout, fmt='(a)') 'Reading radiance 1b data from mwts3e.hdf'
+         filename = 'mwts3e'
+         call da_read_obs_hdf5mwts3e(iv, filename)
+      end if
+
       if (use_mwhsobs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from mwhsa.dat and mwhsb.dat'
          filename = 'mwhsa'
@@ -108,28 +126,22 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          call da_read_obs_fy3('mwhs ', iv, filename)
       end if
 
-      if (use_mwhs2obs) then
-         write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from mwhs2.hdf'
-         filename = 'mwhs2'
-         call da_read_obs_hdf5mwhs2(iv, filename)
+      if (use_mwhs2cobs) then
+         write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from mwhs2c.hdf'
+         filename = 'mwhs2c'
+         call da_read_obs_hdf5mwhs2c(iv, filename)
+               end if 
+
+      if (use_mwhs2dobs) then
+         write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from mwhs2d.hdf'
+         filename = 'mwhs2d'
+         call da_read_obs_hdf5mwhs2d(iv, filename)
       end if
 
       if (use_mwhs2eobs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from mwhs2e.hdf'
          filename = 'mwhs2e'
          call da_read_obs_hdf5mwhs2e(iv, filename)
-      end if
-      
-      if (use_mwts2obs) then
-         write(unit=stdout, fmt='(a)') 'Reading radiance 1b data from mwts2d.hdf'
-         filename = 'mwts2'
-         call da_read_obs_hdf5mwts2(iv, filename)
-      end if
-
-      if (use_mwts3obs) then
-         write(unit=stdout, fmt='(a)') 'Reading radiance 1b data from mwts3e.hdf'
-         filename = 'mwts3'
-         call da_read_obs_hdf5mwts3(iv, filename)
       end if
 
       if (use_atmsobs) then

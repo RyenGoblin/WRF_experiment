@@ -31,6 +31,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
    real, allocatable :: model_psfc(:)
    real, allocatable :: model_qcw(:,:)
    real, allocatable :: model_qci(:,:)
+   real, allocatable :: model_qrn(:,:)
    
 
    integer            :: num_rad, nchan, n , l
@@ -83,6 +84,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
          allocate(model_psfc(num_rad))
          allocate(model_qcw(nlevels,num_rad))
          allocate(model_qci(nlevels,num_rad))
+         allocate(model_qrn(nlevels,num_rad))
 
          model_t(:,:)=0.0
          model_q(:,:)=0.0
@@ -90,6 +92,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
          model_psfc(:)=0.0
          model_qcw(:,:)=0.0
          model_qci(:,:)=0.0
+         model_qrn(:,:)=0.0
 
          call da_interp_lin_3d (grid%xa%t, iv%instid(i)%info, model_t)
          call da_interp_lin_3d (grid%xa%q, iv%instid(i)%info, model_q)
@@ -97,6 +100,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
 
          if (cloud_cv_options >0) then
             call da_interp_lin_3d (grid%xa%qcw,iv%instid(i)%info,model_qcw)
+            call da_interp_lin_3d (grid%xa%qrn,iv%instid(i)%info,model_qrn)
             if (cloud_cv_options >1) then
                call da_interp_lin_3d (grid%xa%qci,iv%instid(i)%info,model_qci)
             end if
@@ -113,6 +117,13 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
             do n=1,num_rad 
                if (isnan(model_qci(lv,n)).or.model_qci(lv,n)>100) then 
                   model_qci(lv,n)=0.00
+               end if
+            end do
+         end do 
+         do lv=1,nlevels
+            do n=1,num_rad 
+               if (isnan(model_qrn(lv,n)).or.model_qrn(lv,n)>100) then 
+                  model_qrn(lv,n)=0.00
                end if
             end do
          end do 
@@ -158,7 +169,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
 		    con_cld_vars(n) % cc(:)       = iv%instid(i)%cc(:,n)
 		    con_cld_vars(n) % clw(:)      = iv%instid(i)%scatt_qcw(:,n)
 		    con_cld_vars(n) % ciw(:)      = iv%instid(i)%scatt_qci(:,n)
-          con_cld_vars(n) % rain(:)     = iv%instid(i)%rain(:,n)
+          con_cld_vars(n) % rain(:)     = iv%instid(i)%scatt_qrn(:,n)
 		    con_cld_vars(n) % sp(:)       = iv%instid(i)%sp(:,n)
           ! con_cld_vars(n) % rain(:)     = iv%instid(i)%rain(:,n)
 		    !con_cld_vars(n) % sp(:)       = iv%instid(i)%sp(:,n)!固体降水暂无计算公式，不作为输入
@@ -188,10 +199,9 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
 			
 			   con_cld_vars_tl(n) % p(:)   = 0.00
 			   con_cld_vars_tl(n) % ph(:)  = 0.00
-            !con_cld_vars_tl(n) % ciw(:) = 0.00
-			   !con_cld_vars_tl(n) % clw(:) = 0.00
             con_cld_vars_tl(n) % ciw(:) = model_qci(:,n)
 			   con_cld_vars_tl(n) % clw(:) = model_qcw(:,n)
+            con_cld_vars_tl(n) % rain(:) = model_qrn(:,n)
 			   !con_cld_vars_tl(n) % cc(:)  = iv%instid(i)%cc (:,n)*0.01
 			   !con_cld_vars_tl(n) % rain(:)= iv%instid(i)%rain(:,n)*0.01
 			   !con_cld_vars_tl(n) % sp(:)  = iv%instid(i)%sp (:,n)*0.01
@@ -217,6 +227,9 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
          deallocate(model_q)
          deallocate(model_mr)
          deallocate(model_psfc)
+         deallocate(model_qcw)
+         deallocate(model_qci)
+         deallocate(model_qrn)
       end if
     
       ! [1.3] Call RTM TL model
@@ -275,7 +288,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
 			   d_con_cld_vars(n) % ph(:)  = con_cld_vars(n) % ph(:)
 			   d_con_cld_vars(n) % clw(:) = con_cld_vars(n) % clw(:)
 			   d_con_cld_vars(n) % ciw(:) = con_cld_vars(n) % ciw(:)
-			   !d_con_cld_vars(n) % rain(:)= con_cld_vars(n) % rain(:)
+			   d_con_cld_vars(n) % rain(:)= con_cld_vars(n) % rain(:)
 			   !d_con_cld_vars(n) % cc(:)  = con_cld_vars(n) % cc(:)
 			   !d_con_cld_vars(n) % sp(:)  = con_cld_vars(n) % sp(:)
             if ( use_rttov_kmatrix ) then
@@ -289,7 +302,7 @@ subroutine da_transform_xtoy_rttov_scatt (grid, iv, y )
 		      d_con_cld_vars_tl(n) % ph(:)  = con_cld_vars_tl(n) % ph(:)
 			   d_con_cld_vars_tl(n) % clw(:) = con_cld_vars_tl(n) % clw(:)
 			   d_con_cld_vars_tl(n) % ciw(:) = con_cld_vars_tl(n) % ciw(:)
-			   !d_con_cld_vars_tl(n) % rain(:)= con_cld_vars_tl(n) % rain(:)
+			   d_con_cld_vars_tl(n) % rain(:)= con_cld_vars_tl(n) % rain(:)
 			   !d_con_cld_vars_tl(n) % cc(:)  = con_cld_vars_tl(n) % cc(:)
 			   !d_con_cld_vars_tl % sp(:)  = con_cld_vars_tl(n) % sp(:)
             ! d_aux_vars(n) % fastem(:) = 0.0

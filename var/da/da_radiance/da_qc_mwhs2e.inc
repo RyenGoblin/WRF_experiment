@@ -23,11 +23,17 @@ subroutine da_qc_mwhs2e (it, i, nchan, ob, iv)
                 nrej_mixsurface,nrej_windowchanl, nrej_si,    &
                 nrej_clw,nrej_topo, num_proc_domain,  &
                 nrej_limb,nrej_sfchgt,nrej_Lindex
-
+   ! error Observation model variables
+   real :: C_clr(15),C_cld(15),g_clr(15),g_cld(15),C_sym,SI_obs,SI_fg
    character(len=30)  :: filename
 
    if (trace_use) call da_trace_entry("da_qc_mwhs2e")
 
+   ! error Observation model variables initialise (from offline calculate)
+   C_clr = (/0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00/)
+   C_cld = (/0.00,0.00,0.00,20.5,25.0,25.5,25.5,0.00,0.00,0.00,30.5,30.5,30.5,30.5,26.0/)
+   g_clr = (/0.00,0.00,0.00,0.88,2.88,1.40,4.14,0.00,0.00,0.00,3.50,3.82,4.02,4.59,5.99/)
+   g_cld = (/0.00,0.00,0.00,1.51,0.83,5.18,14.98,0.00,0.00,0.00,17.56,21.34,22.40,22.32,21.59/)
    ngood(:)        = 0
    nrej(:)         = 0
    nrej_omb_abs(:) = 0
@@ -86,50 +92,50 @@ subroutine da_qc_mwhs2e (it, i, nchan, ob, iv)
          ! if (abs(satzen) > 45.0) &
          !    iv%instid(i)%tb_qc(:,n)  =  qc_bad
 
-         !  d. check cloud/precipitation
+         !  d. check cloud/precipitation,如果使用rttov_scatt全空同化，将会跳过去云部分
          !-----------------------------------------------------------
-         if (ob%instid(i)%tb(1,n) > 0.0 .and. ob%instid(i)%tb(10,n) > 0.0 ) then
-            si = ob%instid(i)%tb(1,n)-ob%instid(i)%tb(10,n)
-            if (si >= 4.0) then
+         if (rttov_scatt .eqv. .false.) then
+            if (ob%instid(i)%tb(1,n) > 0.0 .and. ob%instid(i)%tb(10,n) > 0.0 ) then
+               si = ob%instid(i)%tb(1,n)-ob%instid(i)%tb(10,n)
+               if (si >= 4.0) then
+                  iv%instid(i)%tb_qc(:,n) = qc_bad
+                  iv%instid(i)%cloud_flag(:,n) = qc_bad
+                  if (iv%instid(i)%info%proc_domain(1,n)) &
+                     nrej_si = nrej_si + 1
+               end if
+            end if
+
+            !!!!! modified based on Qin Zhengkun et al. by Fangdi ！！！！！！！
+            !SUMM=0.0
+            !Aver=0.0
+            !do ii=1,15
+            !   SUMM=SUMM+ob%instid(i)%tb(ii,n)
+            !end do 
+            !Aver=SUMM/15
+         
+            !Stdd=0.0
+            !summ1=0.0
+            !do nn=1,15
+            !   summ1=summ1+(ob%instid(i)%tb(nn,n)-Aver)**2
+            !end do   
+            !Stdd=sqrt(summ1/15)  
+            !Tnorm=(ob%instid(i)%tb(1,n)-Aver)/Stdd
+            !Lindex=Tnorm/(((ob%instid(i)%tb(10,n)/100-1)**3)/2)    
+
+            !if (Lindex > 0.35) then
+            !   iv%instid(i)%tb_qc(:,n) = qc_bad
+            !   if (iv%instid(i)%info%proc_domain(1,n)) &
+            !   ! nrej_Lindex = nrej_Lindex + 1
+            !      nrej_clw = nrej_clw + 1
+            !end if
+       
+            if (iv%instid(i)%clwp(n) >= 0.2) then
                iv%instid(i)%tb_qc(:,n) = qc_bad
                iv%instid(i)%cloud_flag(:,n) = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
-                  nrej_si = nrej_si + 1
+                  nrej_clw = nrej_clw + 1
             end if
          end if
-
-         !!!!! modified based on Qin Zhengkun et al. by Fangdi ！！！！！！！
-         SUMM=0.0
-         Aver=0.0
-         do ii=1,15
-            SUMM=SUMM+ob%instid(i)%tb(ii,n)
-         end do 
-         Aver=SUMM/15
-         
-         Stdd=0.0
-         summ1=0.0
-         do nn=1,15
-            summ1=summ1+(ob%instid(i)%tb(nn,n)-Aver)**2
-         end do   
-         Stdd=sqrt(summ1/15)  
-         Tnorm=(ob%instid(i)%tb(1,n)-Aver)/Stdd
-         Lindex=Tnorm/(((ob%instid(i)%tb(10,n)/100-1)**3)/2)    
-
-         if (Lindex > 0.35) then
-            iv%instid(i)%tb_qc(:,n) = qc_bad
-            if (iv%instid(i)%info%proc_domain(1,n)) &
-               ! nrej_Lindex = nrej_Lindex + 1
-               nrej_clw = nrej_clw + 1
-         end if
-
-         
-         if (iv%instid(i)%clwp(n) >= 0.02) then
-            iv%instid(i)%tb_qc(:,n) = qc_bad
-            iv%instid(i)%cloud_flag(:,n) = qc_bad
-            if (iv%instid(i)%info%proc_domain(1,n)) &
-               nrej_clw = nrej_clw + 1
-         end if
-
          !  e. check surface height/pressure
          !------------------------------------------------------
          sfchgt = iv%instid(i)%info%elv(n)
@@ -174,15 +180,38 @@ subroutine da_qc_mwhs2e (it, i, nchan, ob, iv)
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_omb_abs(k) = nrej_omb_abs(k) + 1
             end if
-
-          ! relative departure check
             if (use_error_factor_rad) then
-                 iv%instid(i)%tb_error(k,n) =  &
-                    satinfo(i)%error_std(k)*satinfo(i)%error_factor(k)
+               iv%instid(i)%tb_error(k,n) =  &
+                  satinfo(i)%error_std(k)*satinfo(i)%error_factor(k)
             else
-                 iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
+               iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
             end if
-
+         end do
+         !---------- assign tb_error from Observation error model-------
+         SI_obs = ob%instid(i)%tb(1,n)-ob%instid(i)%tb(10,n)
+         SI_fg  = iv%instid(i)%tb_xb(1,n)-ob%instid(i)%tb(10,n)
+         C_sym = (SI_fg+SI_obs)*0.5
+         do k = 4,7
+            if (C_sym .lt. C_clr(k)) then
+               iv%instid(i)%tb_error(k,n)=g_clr(k)
+            else if(C_sym.ge.C_clr(k) .and. C_sym.lt.C_cld(k)) then
+               iv%instid(i)%tb_error(k,n)=g_clr(k)+(g_cld(k)-g_clr(k))*((C_sym-C_clr(k))/(C_cld(k)-C_clr(k)))**2
+            else 
+               iv%instid(i)%tb_error(k,n)=g_cld(k)
+            end if 
+         end do 
+         do k = 11,15
+            if (C_sym .lt. C_clr(k)) then
+               iv%instid(i)%tb_error(k,n)=g_clr(k)
+            else if(C_sym.ge.C_clr(k) .and. C_sym.lt.C_cld(k)) then
+               iv%instid(i)%tb_error(k,n)=g_clr(k)+(g_cld(k)-g_clr(k))*((C_sym-C_clr(k))/(C_cld(k)-C_clr(k)))**2
+            else 
+               iv%instid(i)%tb_error(k,n)=g_cld(k)
+            end if 
+         end do 
+         !----------assign tb error complete----------------------------
+         ! relative departure check
+         do k = 1, nchan
             if (abs(iv%instid(i)%tb_inv(k,n)) > 3.0*iv%instid(i)%tb_error(k,n)) then
                iv%instid(i)%tb_qc(k,n)  = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &

@@ -57,6 +57,10 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
    real              :: geoht_pixel(kts:min(kte,kme-1))
    real              :: tt_pixel(kts:min(kte,kme-1))
    real              :: pp_pixel(kts:min(kte,kme-1))
+   !For allsky observation error caculation
+   real, allocatable :: SI_obs(:,:)
+   real, allocatable :: SI_fg(:,:)
+   real, allocatable :: C_sym(:,:)
 
    unit1=10
    unit2=11
@@ -66,7 +70,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
    unit6=16
    unit7=17
    unit8=18
-   write(*,*)"will call get innov vector scatt!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
    if (trace_use) call da_trace_entry("da_get_innov_vector_rttov_scatt")
 
    !------------------------------------------------------
@@ -221,8 +224,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       do k=kts,kte
          call da_interp_lin_2d (grid%xb%t  (:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%tm(k,:))
          call da_interp_lin_2d (grid%xb%q  (:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qm(k,:))
+         call da_interp_lin_2d (grid%xb%qcw(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qcw(k,:))
        ! call da_interp_lin_2d (grid%xb%qrn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qrn(k,:))
-       ! call da_interp_lin_2d (grid%xb%qcw(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qcw(k,:))
        ! call da_interp_lin_2d (grid%xb%qci(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qci(k,:))
        ! call da_interp_lin_2d (grid%xb%qsn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qsn(k,:))
        ! call da_interp_lin_2d (grid%xb%qgr(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%qgr(k,:))
@@ -420,7 +423,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 		   con_cld_vars(n) % cc(1:nlevels)       = iv%instid(inst)%cc(1:nlevels,n)
 		   con_cld_vars(n) % clw(1:nlevels)      = iv%instid(inst)%scatt_qcw(1:nlevels,n)
 		   con_cld_vars(n) % ciw(1:nlevels)      = iv%instid(inst)%scatt_qci(1:nlevels,n)
-         con_cld_vars(n) % rain(1:nlevels)     = iv%instid(inst)%rain(1:nlevels,n)
+         con_cld_vars(n) % rain(1:nlevels)     = iv%instid(inst)%scatt_qrn(1:nlevels,n)
          con_cld_vars(n) % ph(1:nlevels)     = iv%instid(inst)%phm(1:nlevels,n)!半层压力层数要比nlevels多一层
 		   con_cld_vars(n) % sp(1:nlevels)       = iv%instid(inst)%sp(1:nlevels,n) !固体降水暂无计算公式，不作为输入
 
@@ -492,13 +495,66 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          end do
       end do
 
-      open(unit=unit1,file='tb_inv_scatt.txt',status='unknown')
+      open(unit=unit1,file='tb_scatt.txt',status='unknown')
       do ch=1,nchan
-         write(unit1,*)(iv%instid(inst)%tb_inv(ch,n),n=n1,n2)
+         do k = n1,n2
+            write(unit1,"(F10.5,1X)",advance='no')iv%instid(inst)%tb_xb(ch,k)
+         end do 
+         write(unit1,*)
       end do
       close(unit1)
-      write(*,*)"inv_tb output success!"
+      write(*,*)"tb_xb output success!"
+       
+      !----------------------------------------------------------------
+      ! for allsky observation error model calculation
+      !----------------------------------------------------------------
+      allocate(C_sym(nchan,n1:n2))
+      allocate(SI_obs(nchan,n1:n2))
+      allocate(SI_fg(nchan,n1:n2))
+      do n=n1,n2
+         do k=1,nchan
+            SI_obs(k,n) = ob%instid(inst)%tb(1,n)-ob%instid(inst)%tb(10,n)
+            SI_fg(k,n) = iv%instid(inst)%tb_xb(1,n)-iv%instid(inst)%tb_xb(10,n)
+            C_sym(k,n) = (SI_obs(k,n)+SI_fg(k,n))*0.5
+         end do 
+      end do   
 
+      open(unit=unit2,file='SI_obs_allsky.txt')
+      do ch =1,nchan
+         do k = n1,n2
+            write(unit2,"(F10.5)",advance='no')SI_obs(ch,k)
+         end do
+         write(unit2,*)
+      end do
+      close(unit2)
+      write(*,*)"SI_obs output success!"
+
+      open(unit=unit3,file='SI_fg_allsky.txt')
+      do ch =1,nchan
+         do k= n1,n2
+            write(unit3,"(F10.5)",advance='no')SI_fg(ch,k)
+         end do
+         write(unit3,*)
+      end do
+      close(unit3)
+      write(*,*)"SI_fg output success!"
+
+      open(unit=unit4,file='C_sym_land.txt')
+      do ch =1,nchan
+         do k= n1,n2
+            write(unit4,"(F10.5)",advance='no')C_sym(ch,k)
+         end do
+         write(unit4,*)
+      end do
+      close(unit4)
+      write(*,*)"C_sym output success!"
+
+      deallocate(SI_obs)
+      deallocate(SI_fg)
+      deallocate(C_sym)
+      !-----------------------------------------------------------------
+      !                allsky observation error model ouput end
+      !-----------------------------------------------------------------
       deallocate (v_p)
       deallocate (clw)
       deallocate (dpf)

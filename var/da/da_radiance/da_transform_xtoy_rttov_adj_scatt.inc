@@ -39,7 +39,7 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
    type(aux_vars_type),  allocatable  :: d_aux_vars(:)
    real,    allocatable :: d_tb(:,:)
    integer :: d_num_rad, l_num_rad,e,len,nl
-   real, allocatable :: temp_t(:,:),temp_q(:,:), temp_ps(:), rtemp(:,:),temp_qcw(:,:),temp_qci(:,:)
+   real, allocatable :: temp_t(:,:),temp_q(:,:), temp_ps(:), rtemp(:,:),temp_qcw(:,:),temp_qci(:,:),temp_qrn(:,:)
    real, allocatable :: temp_tb(:,:)
    real, allocatable :: temp_t_jac(:,:,:), temp_q_jac(:,:,:), temp_ps_jac(:,:)
    integer, allocatable :: itemp(:,:)
@@ -116,7 +116,7 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
 		    con_cld_vars(n) % cc(:) = iv%instid(i)%cc(:,n)
 		    con_cld_vars(n) % clw(:)= iv%instid(i)%scatt_qcw(:,n)
 		    con_cld_vars(n) % ciw(:)= iv%instid(i)%scatt_qci(:,n)
-          con_cld_vars(n) % rain(:)= iv%instid(i)%rain(:,n)
+          con_cld_vars(n) % rain(:)= iv%instid(i)%scatt_qrn(:,n)
 		    con_cld_vars(n) % sp(:)  = iv%instid(i)%sp(:,n)
 
             if ( use_rttov_kmatrix ) then
@@ -627,6 +627,13 @@ subroutine da_transform_xtoy_rttov_adj_scatt ( iv, jo_grad_y, jo_grad_x )
             end do  
             call da_interp_lin_3d_adj(jo_grad_x%qcw,iv%instid(i)%info,temp_qcw)
             deallocate(temp_qcw)
+
+            allocate(temp_qrn(nlevels,num_rad))
+            do n=1,num_rad
+               temp_qrn(:,n) = con_cld_vars_ad(n)%rain(:)
+            end do
+            call da_interp_lin_3d_adj(jo_grad_x%qrn,iv%instid(i)%info,temp_qrn)
+            deallocate(temp_qrn)   
       
             if (cloud_cv_options > 1) then
                allocate(temp_qci(nlevels,num_rad))

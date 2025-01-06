@@ -22,7 +22,7 @@ subroutine da_get_innov_vector_rttov (it, grid, ob, iv)
    integer  :: i, j, k  ! Index dimension.
    integer  :: nlevels  ! Number of obs levels.
    integer  :: nchanprof, errorstatus
-   integer  :: unit1,unit2,unit3,lv,num_rad
+   integer  :: unit1,unit2,unit3,lv,num_rad,ch
 
    character(len=256) :: atlas_path
    real*8                           :: seap, icep, lndp, snop
@@ -40,7 +40,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
    type(con_vars_type),  allocatable :: con_vars(:)
    type(aux_vars_type),  allocatable :: aux_vars(:)
-   type(con_cld_vars_type),  allocatable :: con_cld_vars(:)
 
    type(rttov_chanprof), allocatable :: chanprof(:)
    type(rttov_profile), allocatable   :: profiles(:)
@@ -56,6 +55,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
    real              :: geoht_pixel(kts:min(kte,kme-1))
    real              :: tt_pixel(kts:min(kte,kme-1))
    real              :: pp_pixel(kts:min(kte,kme-1))
+   !For allsky obervation error caculation
+   real, allocatable :: SI_fg(:,:)
 
    if (trace_use) call da_trace_entry("da_get_innov_vector_rttov")
 
@@ -89,7 +90,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       allocate (pres(1:nlevels))
       allocate (con_vars(n1:n2))
       allocate (aux_vars(n1:n2))
-      allocate (con_cld_vars(n1:n2))
  
       pres(1:nlevels) = coefs(inst) % coef % ref_prfl_p(1:nlevels)
 
@@ -119,11 +119,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       ! [1.2] Interpolate horizontally to ob:
       call da_interp_lin_3d (grid%xb%t, iv%instid(inst)%info, iv%instid(inst)%t (:,n1:n2))
       call da_interp_lin_3d (grid%xb%q, iv%instid(inst)%info, iv%instid(inst)%mr(:,n1:n2))
-
-      call da_interp_lin_3d (grid%xb%qcw, iv%instid(inst)%info, iv%instid(inst)%scatt_qcw(:,n1:n2))!将背景场qcw插值到观测场中
-      call da_interp_lin_3d (grid%xb%qci, iv%instid(inst)%info, iv%instid(inst)%scatt_qci(:,n1:n2))!将背景场qci插值到观测场中
-      call da_interp_lin_3d (grid%xb%qrn, iv%instid(inst)%info, iv%instid(inst)%scatt_qrn(:,n1:n2))!将背景场qrn插值到观测场中
-      call da_interp_lin_3d (grid%xb%rh,  iv%instid(inst)%info, iv%instid(inst)%rh (:,n1:n2))!将背景场相对湿度插值到观测场中
 
 
       do n= n1,n2
@@ -212,10 +207,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       iv%instid(inst)%pm(:,n1:n2)  = v_p(:,n1:n2)
       iv%instid(inst)%ps(n1:n2) = 0.01 * iv%instid(inst)%ps(n1:n2)       ! hPa
       iv%instid(inst)%mr2m(n1:n2) = iv%instid(inst)%q2m(n1:n2) * q2ppmv  ! ppmv
-
-      ! 计算RTTOV-SCATT需要的额外的水凝物变量,计算半层压力
-      call da_calc_hydrotable(nlevels,n1,n2,grid,iv,iv%instid(inst)%rain,iv%instid(inst)%cc,iv%instid(inst)%sp,iv%instid(inst)%phm)!得到降雨通量、云覆盖
-
 
       ! ADD for computing cloud liquid water path (mm) from guess
 
@@ -317,39 +308,11 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( n, temp, temp2, temp3 )
-      write(*,*)"iv%instid(inst)%t:",iv%instid(inst)%t(1,n1:n1+10)
-      unit1=1
-      unit2=2
-      unit3=3
-      open(unit=unit1,file='iv_t_scatt.txt')
-      do lv=1,nlevels 
-        write(unit1,*)(iv%instid(inst)%t(lv,num_rad),num_rad=n1,n2)
-      end do
-      close(unit1)
-      write(*,*)"iv_t output success!"
 
-      open(unit=unit2,file='iv_q_scatt.txt')
-      do lv=1,nlevels
-        write(unit2,*)(iv%instid(inst)%mr(lv,num_rad),num_rad=n1,n2)
-      end do
-      close(unit2)
-      write(*,*)"iv_q output success!"
-
-      !open(unit=unit3,file='grid%xb%t_j1.txt')
-      !do k=kms,kme
-      !   write(unit3,*)(grid%xb%t(i,1,k),i=ims,ime)
-      !end do
-      !close(unit3)
       do n=n1,n2
          con_vars(n) % nlevels = nlevels 
          allocate (con_vars(n) % t(nlevels))
          allocate (con_vars(n) % q(nlevels))
-         allocate (con_cld_vars(n) % ph(nlevels))
-		   allocate (con_cld_vars(n) % cc(nlevels))
-		   allocate (con_cld_vars(n) % clw(nlevels))
-		   allocate (con_cld_vars(n) % ciw(nlevels))
-		   allocate (con_cld_vars(n) % rain(nlevels))
-		   allocate (con_cld_vars(n) % sp(nlevels))
          if ( use_rttov_kmatrix ) then
             allocate (con_vars(n) % t_jac(nchan,nlevels))
             allocate (con_vars(n) % q_jac(nchan,nlevels))
@@ -361,7 +324,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
          con_vars(n) % t(1:nlevels) = iv%instid(inst)%t(1:nlevels,n)
          con_vars(n) % q(1:nlevels) = iv%instid(inst)%mr(1:nlevels,n)
-         iv%instid(inst)%ps(:) = 1050.00
          con_vars(n) % ps           = iv%instid(inst)%ps(n)
 
          aux_vars(n) % t2m      = iv%instid(inst)%t2m(n)
@@ -377,13 +339,6 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          aux_vars(n) % elevation = iv%instid(inst)%elevation(n) !iv%instid(inst)%info%elv(n)
          aux_vars(n) % rlat     = iv%instid(inst)%info%lat(1,n) 
 
-         !加入con_cld_vars并为其赋值
-		   con_cld_vars(n) % cc(1:nlevels)       = iv%instid(inst)%cc(1:nlevels,n)
-		   con_cld_vars(n) % clw(1:nlevels)      = iv%instid(inst)%scatt_qcw(1:nlevels,n)
-		   con_cld_vars(n) % ciw(1:nlevels)      = iv%instid(inst)%scatt_qci(1:nlevels,n)
-         con_cld_vars(n) % rain(1:nlevels)     = iv%instid(inst)%rain(1:nlevels,n)
-         con_cld_vars(n) % ph(1:nlevels)     = iv%instid(inst)%phm(1:nlevels,n)!半层压力层数要比nlevels多一层
-		   con_cld_vars(n) % sp(1:nlevels)       = iv%instid(inst)%sp(1:nlevels,n) !固体降水暂无计算公式，不作为输入
          ! [1.3] Call RTM forward model
          ! da_rttov_direct nominally an array version, but doesn't handle arrays
          ! of surface flags properly
@@ -444,6 +399,31 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          end do
       end do
 
+      !----------------------------------------------------------------
+      ! for allsky observation error model calculation
+      !----------------------------------------------------------------
+      unit1=1
+
+      allocate(SI_fg(nchan,n1:n2))
+      do n=n1,n2
+          do k=1,nchan
+             SI_fg(k,n) = iv%instid(inst)%tb_xb(1,n)-iv%instid(inst)%tb_xb(10,n)
+          end do 
+      end do  
+
+      open(unit=unit1,file='SI_fg_clearsky.txt')
+      do ch =1,nchan
+         do k= n1,n2
+            write(unit1,"(F10.5)",advance='no')SI_fg(ch,k)
+         end do
+         write(unit1,*)
+      end do
+      close(unit1)
+      write(*,*)"SI_fg output success!"
+
+      !-----------------------------------------------------------------
+      !                allsky observation error model ouput end
+      !-----------------------------------------------------------------      
       deallocate (v_p)
       deallocate (clw)
       deallocate (dpf)

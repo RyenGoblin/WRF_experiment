@@ -1,4 +1,4 @@
-subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
+subroutine da_read_obs_hdf5mwts2d (iv, infile_tb)
    !--------------------------------------------------------
    !  Purpose: read in FY3D MWTS2 Level-1 data in HDF5 format
    !           and form innovation structure
@@ -87,9 +87,9 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
 
 ! Other work variables
    real(r_kind)     :: dlon_earth,dlat_earth
-   integer(i_kind)  :: num_mwts2_local, num_mwts2_global, num_mwts2_used, num_mwts2_thinned
-   integer(i_kind)  :: num_mwts2_used_tmp, num_mwts2_file
-   integer(i_kind)  :: num_mwts2_local_local, num_mwts2_global_local, num_mwts2_file_local
+   integer(i_kind)  :: num_mwts2d_local, num_mwts2d_global, num_mwts2d_used, num_mwts2d_thinned
+   integer(i_kind)  :: num_mwts2d_used_tmp, num_mwts2d_file
+   integer(i_kind)  :: num_mwts2d_local_local, num_mwts2d_global_local, num_mwts2d_file_local
    integer(i_kind)  :: itx, itt
    character(80)    :: filename1, filename2
    integer          :: nchan,ifov,iscan,ichannels
@@ -101,23 +101,23 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
    integer(i_kind),allocatable  :: ptotal(:)
    real,allocatable             :: in(:), out(:)
    
-   if (trace_use) call da_trace_entry("da_read_obs_hdf5mwts2")
+   if (trace_use) call da_trace_entry("da_read_obs_hdf5mwts2d")
 
 !  0.0  Initialize variables
 !-----------------------------------
    head_allocated = .false.
    platform_id  = 23  ! Table-2 Col 1 corresponding to 'fy3'
    satellite_id = 4   ! Table-2 Col 3 corresponding to 'D'
-   sensor_id    = 72  ! Table-3 Col 2 corresponding to 'mwts2'
+   sensor_id    = 72  ! Table-3 Col 2 corresponding to 'mwts2d'
 
    allocate(ptotal(0:num_fgat_time))
    ptotal(0:num_fgat_time) = 0
    iobs = 0                 ! for thinning, argument is inout
-   num_mwts2_file    = 0
-   num_mwts2_local   = 0
-   num_mwts2_global  = 0
-   num_mwts2_used    = 0
-   num_mwts2_thinned = 0
+   num_mwts2d_file    = 0
+   num_mwts2d_local   = 0
+   num_mwts2d_global  = 0
+   num_mwts2d_used    = 0
+   num_mwts2d_thinned = 0
 
    do i = 1, rtminit_nsensor
       if (platform_id  == rtminit_platform(i) &
@@ -130,7 +130,7 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
    if (inst == 0) then
       call da_warning(__FILE__,__LINE__, &
           (/"The combination of Satellite_Id and Sensor_Id for MWTS-2 is not found"/))
-      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts2")
+      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts2d")
       return
    end if
 
@@ -139,12 +139,12 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
    if(iret.lt.0)then
       call da_warning(__FILE__,__LINE__, &
            (/"Problems in Initializing HDF5 library. Can not read MWTS-2d HDF data. "/))
-      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts2")
+      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts2d")
       return
    endif
 
    nchan = iv%instid(inst)%nchan
-   write(unit=stdout,fmt=*)'mwts2 nchan: ',nchan
+   write(unit=stdout,fmt=*)'MWTS2d nchan: ',nchan
 
 ! 1.0 Assign file names and prepare to read mwhs2 files
 !-------------------------------------------------------------------------
@@ -161,7 +161,7 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
       ! check if L1SGRTBR-0x.h5 is available for multiple input files
       ! here 0x is the input file sequence number  
       ! do not confuse it with fgat time slot index
-      ! 将文件重命名为 mwts2-01.hdf, mwts2-02.hdf...
+      ! 将文件重命名为 mwts2d-01.hdf, mwts2d-02.hdf...
       do i = 1, nfile_max
          write(filename1,fmt='(A,A,I2.2,A)') trim(infile_tb),'-',i,'.hdf'
          inquire (file=filename1, exist=fexist)
@@ -176,8 +176,8 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
 
    if ( nfile == 0 ) then
       call da_warning(__FILE__,__LINE__, &
-         (/"No valid mwts2.hdf file found."/))
-      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts2")
+         (/"No valid mwts2d .hdf file found."/))
+      if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts2d")
       return
    end if
 
@@ -187,9 +187,9 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
 !!           (/'Can not find leapsec.dat for MWHS2 data: copy or link from WRFDA/var/run'/))
 
    infile_loop:  do ifile = 1, nfile
-      num_mwts2_file_local    = 0
-      num_mwts2_local_local   = 0
-      num_mwts2_global_local  = 0
+      num_mwts2d_file_local    = 0
+      num_mwts2d_local_local   = 0
+      num_mwts2d_global_local  = 0
 
    ! open HDF5 file for read
       call H5Fopen_f(fname_tb(ifile),H5F_ACC_RDONLY_F,fhnd1,iret,H5P_DEFAULT_F)
@@ -323,7 +323,7 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
       if(iret.lt.0)then
          call da_warning(__FILE__,__LINE__, &
              (/"HDF5 read error for: Longitude"/))
-             call da_trace_exit("da_read_obs_hdf5mwts2")
+             call da_trace_exit("da_read_obs_hdf5mwts2d")
       endif
       call h5dclose_f(dhnd1, iret)
 
@@ -508,16 +508,16 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
 
       ! start fov_loop
          fov_loop:      do ifov=1, lo_rez_fov
-            num_mwts2_file       = num_mwts2_file + 1
-            num_mwts2_file_local = num_mwts2_file_local + 1
+            num_mwts2d_file       = num_mwts2d_file + 1
+            num_mwts2d_file_local = num_mwts2d_file_local + 1
             info%lat  =  latlr(ifov,iscan)
             info%lon  =  lonlr(ifov,iscan)
 
             call da_llxy (info, loc, outside, outside_all)
             if (outside_all) cycle fov_loop
 
-            num_mwts2_global       = num_mwts2_global + 1
-            num_mwts2_global_local = num_mwts2_global_local + 1
+            num_mwts2d_global       = num_mwts2d_global + 1
+            num_mwts2d_global_local = num_mwts2d_global_local + 1
             ptotal(ifgat) = ptotal(ifgat) + 1
             if (outside) cycle fov_loop   ! No good for this PE
          ! Discard data over Land (landmask =0 -->Land =1 -->Sea)
@@ -525,8 +525,8 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
             if(loflo(ifov,iscan).eq.3) landsea_mask = 1
 !!!            if( landsea_mask == 0 ) cycle fov_loop
 
-            num_mwts2_local       = num_mwts2_local + 1
-            num_mwts2_local_local = num_mwts2_local_local + 1
+            num_mwts2d_local       = num_mwts2d_local + 1
+            num_mwts2d_local_local = num_mwts2d_local_local + 1
             write(unit=info%date_char, &
             fmt='(i4.4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
                idate5(1), '-', idate5(2), '-', idate5(3), '_', idate5(4), &
@@ -546,12 +546,12 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
                crit = 1.
                call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
                if (.not. iuse) then
-                  num_mwts2_thinned = num_mwts2_thinned+1
+                  num_mwts2d_thinned = num_mwts2d_thinned+1
                   cycle fov_loop
                end if
             end if
 
-            num_mwts2_used = num_mwts2_used + 1
+            num_mwts2d_used = num_mwts2d_used + 1
 
 
 ! 4.0 assign information to sequential radiance structure
@@ -581,15 +581,15 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
 
 	print*,'nscan=',nscan
 	print*,'nfov=',lo_rez_fov
-      write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_mwts2_file    : ',num_mwts2_file_local
-      write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_mwts2_global  : ',num_mwts2_global_local
-      write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_mwts2_local   : ',num_mwts2_local_local
+      write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_mwts2d_file    : ',num_mwts2d_file_local
+      write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_mwts2d_global  : ',num_mwts2d_global_local
+      write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_mwts2d_local   : ',num_mwts2d_local_local
    end do infile_loop
 
    call H5close_f(iret)
 
 
-   if (thinning .and. num_mwts2_global > 0 ) then
+   if (thinning .and. num_mwts2d_global > 0 ) then
 #ifdef DM_PARALLEL
    ! Get minimum crit and associated processor index.
       j = 0
@@ -628,8 +628,8 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
       p => head
       prev => head
       head_found = .false.
-      num_mwts2_used_tmp = num_mwts2_used
-      do j = 1, num_mwts2_used_tmp
+      num_mwts2d_used_tmp = num_mwts2d_used
+      do j = 1, num_mwts2d_used_tmp
          n = p%sensor_index
          ifgat = p%ifgat
          found = .false.
@@ -653,8 +653,8 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
             end if
             deallocate( current%tb_inv )
             deallocate( current )
-            num_mwts2_thinned = num_mwts2_thinned + 1
-            num_mwts2_used = num_mwts2_used - 1
+            num_mwts2d_thinned = num_mwts2d_thinned + 1
+            num_mwts2d_used = num_mwts2d_used - 1
             continue
          end if
 
@@ -675,11 +675,11 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
 
    end if  ! End of thinning
 
-   iv%total_rad_pixel   = iv%total_rad_pixel + num_mwts2_used
-   iv%total_rad_channel = iv%total_rad_channel + num_mwts2_used*nchan
+   iv%total_rad_pixel   = iv%total_rad_pixel + num_mwts2d_used
+   iv%total_rad_channel = iv%total_rad_channel + num_mwts2d_used*nchan
 
-   iv%info(radiance)%nlocal = iv%info(radiance)%nlocal + num_mwts2_used
-   iv%info(radiance)%ntotal = iv%info(radiance)%ntotal + num_mwts2_global
+   iv%info(radiance)%nlocal = iv%info(radiance)%nlocal + num_mwts2d_used
+   iv%info(radiance)%ntotal = iv%info(radiance)%ntotal + num_mwts2d_global
 
    do i = 1, num_fgat_time
       ptotal(i) = ptotal(i) + ptotal(i-1)
@@ -691,19 +691,19 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
       call da_warning(__FILE__,__LINE__,message(1:1))
    endif
 
-   write(unit=stdout,fmt='(a)') 'mwts2 data counts: '
-   write(stdout,fmt='(a,i7)') ' In file: ',num_mwts2_file
-   write(stdout,fmt='(a,i7)') ' Global : ',num_mwts2_global
-   write(stdout,fmt='(a,i7)') ' Local  : ',num_mwts2_local
-   write(stdout,fmt='(a,i7)') ' Used   : ',num_mwts2_used
-   write(stdout,fmt='(a,i7)') ' Thinned: ',num_mwts2_thinned
+   write(unit=stdout,fmt='(a)') 'MWTS2d data counts: '
+   write(stdout,fmt='(a,i7)') ' In file: ',num_mwts2d_file
+   write(stdout,fmt='(a,i7)') ' Global : ',num_mwts2d_global
+   write(stdout,fmt='(a,i7)') ' Local  : ',num_mwts2d_local
+   write(stdout,fmt='(a,i7)') ' Used   : ',num_mwts2d_used
+   write(stdout,fmt='(a,i7)') ' Thinned: ',num_mwts2d_thinned
 
 !  5.0 allocate innovation radiance structure
 !----------------------------------------------------------------
 
-   if (num_mwts2_used > 0) then
-      iv%instid(inst)%num_rad  = num_mwts2_used
-      iv%instid(inst)%info%nlocal = num_mwts2_used
+   if (num_mwts2d_used > 0) then
+      iv%instid(inst)%num_rad  = num_mwts2d_used
+      iv%instid(inst)%info%nlocal = num_mwts2d_used
       write(UNIT=stdout,FMT='(a,i3,2x,a,3x,i10)') &
          'Allocating space for radiance innov structure', &
          inst, iv%instid(inst)%rttovid_string, iv%instid(inst)%num_rad
@@ -714,7 +714,7 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
 !-------------------------------------------------------------
    p => head
 
-   do n = 1, num_mwts2_used
+   do n = 1, num_mwts2d_used
       i = p%sensor_index 
       call da_initialize_rad_iv (i, n, iv, p)
       current => p
@@ -726,11 +726,11 @@ subroutine da_read_obs_hdf5mwts2 (iv, infile_tb)
    deallocate( p )
    deallocate(ptotal)
 
-   if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts2")
+   if (trace_use) call da_trace_exit("da_read_obs_hdf5mwts2d")
 #else
    call da_error(__FILE__,__LINE__,(/"Needs to be compiled with HDF5 library"/))
 #endif
-end subroutine da_read_obs_hdf5mwts2
+end subroutine da_read_obs_hdf5mwts2d
 
 subroutine mjd2cal2td(ju,yr,mt,dy,hr,mn,sc)
   implicit none

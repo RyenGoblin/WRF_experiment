@@ -210,7 +210,7 @@ subroutine da_rttov_scatt_ad( inst, nchanl, nprofiles, con_vars, &
 		   cld_profiles(iprof) % cc  (:)     = con_cld_vars(iprof)%cc      (:) ! cloud cover (0-1)
          cld_profiles(iprof) % clw (:)     = con_cld_vars(iprof)%clw     (:) ! liquid water (kg/kg)
          cld_profiles(iprof) % ciw (:)     = con_cld_vars(iprof)%ciw     (:) ! ice water (kg/kg)
-		   !cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
+		   cld_profiles(iprof) % rain(:)     = con_cld_vars(iprof)%rain    (:) ! rain (kg/kg)
 		   !cld_profiles(iprof) % sp  (:)     = con_cld_vars(iprof)%sp     (:) ! frozen precip. (kg/kg)
       end if
    
