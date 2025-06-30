@@ -1,8 +1,8 @@
-subroutine da_qc_mwts3 (it, i, nchan, ob, iv)
+subroutine da_qc_mwts2d (it, i, nchan, ob, iv)
 
    !---------------------------------------------------------------------------
-   ! Purpose: perform quality control for fy3e mwts3 data.
-   ! Fang Di modified from da_qc_amsua 2023/03/25
+   ! Purpose: perform quality control for fy3d mwts2 data.
+   ! Fang Di modified from da_qc_mwts 2023/03/25
    !---------------------------------------------------------------------------
 
    implicit none
@@ -27,7 +27,7 @@ subroutine da_qc_mwts3 (it, i, nchan, ob, iv)
 
    character(len=30)  :: filename
 
-   if (trace_use) call da_trace_entry("da_qc_mwts3")
+   if (trace_use) call da_trace_entry("da_qc_mwts2d")
 
    ngood(:)        = 0
    nrej(:)         = 0
@@ -44,9 +44,7 @@ subroutine da_qc_mwts3 (it, i, nchan, ob, iv)
    num_proc_domain = 0
 
 
-
       do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
-
 
          if (iv%instid(i)%info%proc_domain(1,n)) &
                num_proc_domain = num_proc_domain + 1
@@ -74,12 +72,10 @@ subroutine da_qc_mwts3 (it, i, nchan, ob, iv)
                nrej_mixsurface = nrej_mixsurface + 1
          end if
 
-         !  b.  reject window channels 1 and 2 over land/sea-ice/snow
+         !  b.  reject channels 1 over land/sea-ice/snow
          !------------------------------------------------------
          if (isflg > 0) then 
-            ! iv%instid(i)%tb_qc(1,n)  = qc_bad
-            ! iv%instid(i)%tb_qc(2,n)  = qc_bad
-            iv%instid(i)%tb_qc(1:3,n) = qc_bad
+            iv%instid(i)%tb_qc(1,n)  = qc_bad
             if (iv%instid(i)%info%proc_domain(1,n)) &
                nrej_windowchanl = nrej_windowchanl + 1
            ! reject whole pixel if not over sea for global case
@@ -89,46 +85,56 @@ subroutine da_qc_mwts3 (it, i, nchan, ob, iv)
 
          !  c.  reject channels 13,14(above top model 10mb),15 
          !------------------------------------------------------
-         iv%instid(i)%tb_qc(15:17,n) = qc_bad
+         ! iv%instid(i)%tb_qc(11:13,n) = qc_bad
 
          !    reject limb obs 
          !------------------------------------------------------
          scanpos = iv%instid(i)%scanpos(n)
-         if (scanpos <= 10 .or. scanpos >= 88) then
-            iv%instid(i)%tb_qc(:,n) = qc_bad
-            if (iv%instid(i)%info%proc_domain(1,n)) then
-               nrej_limb = nrej_limb + 1
-            end if
+         if (scanpos <= 10 .or. scanpos >= 80) then
+            iv%instid(i)%tb_qc(:,n)  =  qc_bad
+            if (iv%instid(i)%info%proc_domain(1,n)) &
+                  nrej_limb = nrej_limb + 1
          end if
+
 
          !  d. check precipitation 
          !-----------------------------------------------------------
-         ! si: 2 options, select 1
-         ! reference: da_qc_atms
-         if (ob%instid(i)%tb(3,n) > 0.0) then
-            si = abs(iv%instid(i)%tb_inv(3,n))
-            if (si >= 3.0) then
-               iv%instid(i)%tb_qc(1:10,n) = qc_bad
-               iv%instid(i)%cloud_flag(1:10,n) = qc_bad
+         ! si: 3 options, select 1
+         ! [1] da_qc_atms
+         if (ob%instid(i)%tb(1,n) > 0.0) then
+            si = abs(iv%instid(i)%tb_inv(1,n))
+            if (si >= 3.0) then                            !!! or 5.0 ???
+               iv%instid(i)%tb_qc(1:6,n) = qc_bad
+               iv%instid(i)%cloud_flag(1:6,n) = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_si = nrej_si + 1
             end if 
          end if
-
-         if (ob%instid(i)%tb(3,n) > 0.0) then
-            si = iv%instid(i)%tb_inv(3,n)
+         ! [2] da_qc_mwts
+         if (ob%instid(i)%tb(1,n) > 0.0) then
+            si = iv%instid(i)%tb_inv(1,n)
             if (isflg .eq. 0 .AND. si >= 3.0) then
-               iv%instid(i)%tb_qc(1:10,n) = qc_bad
-               iv%instid(i)%cloud_flag(1:10,n) = qc_bad
+               iv%instid(i)%tb_qc(1:6,n) = qc_bad
+               iv%instid(i)%cloud_flag(1:6,n) = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_si = nrej_si + 1
             elseif (isflg .gt.0 .AND. si >= 1.5) then
-               iv%instid(i)%tb_qc(1:10,n) = qc_bad
-               iv%instid(i)%cloud_flag(1:10,n) = qc_bad
+               iv%instid(i)%tb_qc(1:6,n) = qc_bad
+               iv%instid(i)%cloud_flag(1:6,n) = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_si = nrej_si + 1
             end if
-         end if   
+         end if 
+         ! [3]吴应昂,硕士学位论文,2015
+         if (ob%instid(i)%tb(2,n) > 0.0) then
+            si = iv%instid(i)%tb_inv(2,n)
+            if (si >= 3.0) then
+               iv%instid(i)%tb_qc(1:6,n) = qc_bad
+               iv%instid(i)%cloud_flag(1:6,n) = qc_bad
+               if (iv%instid(i)%info%proc_domain(1,n)) &
+                  nrej_si = nrej_si + 1
+            end if 
+         end if    
 
          ! clw
          if (iv%instid(i)%clwp(n) >= 0.02) then
@@ -139,17 +145,18 @@ subroutine da_qc_mwts3 (it, i, nchan, ob, iv)
          end if
 
 
+
          !  e. check surface height/pressure
          !-----------------------------------------------------------
          sfchgt = iv%instid(i)%info%elv(n)
          if (sfchgt >= 500) then   ! Reference: Juan Li, Xiaoli Qian et al., 2022
-            iv%instid(i)%tb_qc(10,n) = qc_bad
+            iv%instid(i)%tb_qc(6,n) = qc_bad
             if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_sfchgt = nrej_sfchgt + 1
          end if
 
          if ((isflg .ne. 0) .and. (iv%instid(i)%ps(n) < 850.0)) then
-            iv%instid(i)%tb_qc(7,n) = qc_bad
+            iv%instid(i)%tb_qc(4,n) = qc_bad
             if (iv%instid(i)%info%proc_domain(1,n)) &
                nrej_topo = nrej_topo + 1
          end if 
@@ -164,21 +171,22 @@ subroutine da_qc_mwts3 (it, i, nchan, ob, iv)
          !  f. check innovation
          !-----------------------------------------------------------
          do k = 1, nchan
-
-         ! absolute departure check
+            ! absolute departure check
             if (abs(iv%instid(i)%tb_inv(k,n)) > 5.0) then
-               iv%instid(i)%tb_qc(k,n)  = qc_bad
-               if (iv%instid(i)%info%proc_domain(1,n)) &
+               iv%instid(i)%tb_qc(k,n) = qc_bad
+               if (iv%instid(i)%info%proc_domain(1,n)) then
                   nrej_omb_abs(k) = nrej_omb_abs(k) + 1
+               end if
             end if
 
-         ! relative departure check
+            ! relative departure check
             if (use_error_factor_rad) then   !!! use_error_factor_rad???
                iv%instid(i)%tb_error(k,n) = &
                   satinfo(i)%error_std(k)*satinfo(i)%error_factor(k)
             else
                iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
             end if
+
             if (abs(iv%instid(i)%tb_inv(k,n)) > 3.0*iv%instid(i)%tb_error(k,n)) then
                iv%instid(i)%tb_qc(k,n)  = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) then
@@ -235,10 +243,7 @@ subroutine da_qc_mwts3 (it, i, nchan, ob, iv)
       write(fgat_rad_unit,'(a20,i7)') ' nrej_si          = ', nrej_si
       write(fgat_rad_unit,'(a20,i7)') ' nrej_clw         = ', nrej_clw
       write(fgat_rad_unit,'(a20,i7)') ' nrej_topo        = ', nrej_topo
-      write(fgat_rad_unit,'(a20,i7)') ' nrej_sfchgt      = ', nrej_sfchgt
       write(fgat_rad_unit,'(a20,i7)') ' nrej_limb        = ', nrej_limb
-      write(fgat_rad_unit,'(a20)')    ' nrej_extrema(:)  = '
-      write(fgat_rad_unit,'(10i7)')     nrej_extrema(:)
       write(fgat_rad_unit,'(a20)')    ' nrej_omb_abs(:)  = '
       write(fgat_rad_unit,'(10i7)')     nrej_omb_abs(:)
       write(fgat_rad_unit,'(a20)')    ' nrej_omb_std(:)  = '
@@ -251,8 +256,8 @@ subroutine da_qc_mwts3 (it, i, nchan, ob, iv)
       close(fgat_rad_unit)
       call da_free_unit(fgat_rad_unit)
    end if
-   if (trace_use) call da_trace_exit("da_qc_mwts3")
+   if (trace_use) call da_trace_exit("da_qc_mwts2d")
 
-end subroutine da_qc_mwts3
+end subroutine da_qc_mwts2d
 
 

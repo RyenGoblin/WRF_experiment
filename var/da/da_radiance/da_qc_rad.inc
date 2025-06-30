@@ -59,10 +59,12 @@ subroutine da_qc_rad (it, ob, iv)
       mhs   = trim(rttov_inst_name(rtminit_sensor(i))) == 'mhs'
       iasi  = trim(rttov_inst_name(rtminit_sensor(i))) == 'iasi'	  
       mwts  = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwts'
-      mwts2 = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwts2'
-      mwts3 = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwts3' 
+      mwts2c = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwts2'
+      mwts2d = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwts2'
+      mwts3e = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwts3' 
       mwhs  = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwhs'
-      mwhs2 = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwhs2'
+      mwhs2c = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwhs2'
+      mwhs2d = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwhs2'
       mwhs2e = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwhs2e'
       atms  = trim(rttov_inst_name(rtminit_sensor(i))) == 'atms'
       seviri = trim(rttov_inst_name(rtminit_sensor(i))) == 'seviri'
@@ -94,16 +96,20 @@ subroutine da_qc_rad (it, ob, iv)
          call da_qc_iasi(it,i,nchan,ob,iv)		 
       else if (mwhs) then
          call da_qc_mwhs(it,i,nchan,ob,iv)
-      else if (mwhs2) then
-         call da_qc_mwhs2(it,i,nchan,ob,iv)
+      else if (mwhs2c) then
+         call da_qc_mwhs2c(it,i,nchan,ob,iv)
+      else if (mwhs2d) then
+         call da_qc_mwhs2d(it,i,nchan,ob,iv)
       else if (mwhs2e) then
          call da_qc_mwhs2e(it,i,nchan,ob,iv)                 
       else if (mwts) then
          call da_qc_mwts(it,i,nchan,ob,iv)
-      else if (mwts2) then
-         call da_qc_mwts2(it,i,nchan,ob,iv)
-      else if (mwts3) then
-         call da_qc_mwts3(it,i,nchan,ob,iv)
+      else if (mwts2c) then
+         call da_qc_mwts2c(it,i,nchan,ob,iv)
+      else if (mwts2d) then
+         call da_qc_mwts2d(it,i,nchan,ob,iv)   
+      else if (mwts3e) then
+         call da_qc_mwts3e(it,i,nchan,ob,iv)
       else if (atms) then
          call da_qc_atms(it,i,nchan,ob,iv)
       else if (seviri) then

@@ -1,4 +1,4 @@
-subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
+subroutine da_qc_mwhs2c (it, i, nchan, ob, iv)
 
    !---------------------------------------------------------------------------
    ! Purpose: perform quality control for fy3c mwhs2 data.
@@ -14,19 +14,19 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
    type (iv_type), intent(inout)   :: iv         ! O-B structure.
 
    ! local variables
-   integer   :: n,scanpos,k,isflg,ios,fgat_rad_unit
+   integer   :: n,scanpos,k,isflg,ios,fgat_rad_unit,sfchgt,ii,nn
    logical   :: lmix
-   real      :: si
+   real      :: si,Lindex,Tnorm,Stdd,SUMM,summ1,Aver
    ! real     :: satzen
    integer   :: ngood(nchan),nrej(nchan),nrej_omb_abs(nchan), &
                 nrej_omb_std(nchan),      &
                 nrej_mixsurface,nrej_windowchanl, nrej_si,    &
                 nrej_clw,nrej_topo, num_proc_domain,  &
-                nrej_limb
+                nrej_limb,nrej_sfchgt,nrej_Lindex
 
    character(len=30)  :: filename
 
-   if (trace_use) call da_trace_entry("da_qc_mwhs2")
+   if (trace_use) call da_trace_entry("da_qc_mwhs2c")
 
    ngood(:)        = 0
    nrej(:)         = 0
@@ -38,14 +38,12 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
    nrej_clw        = 0
    nrej_topo       = 0
    nrej_limb       = 0
-
+   nrej_sfchgt     = 0
    num_proc_domain = 0
-      write(*,*)"will mwhs2 qc"
-      write(*,*)"nrej_si is",nrej_si
-      write(*,*)"nrej_clw is",nrej_clw
-      write(*,*)"rttov_scatt option is",rttov_scatt
+   nrej_Lindex     = 0
 
       do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
+
          if (iv%instid(i)%info%proc_domain(1,n)) &
                num_proc_domain = num_proc_domain + 1
 
@@ -62,7 +60,7 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
             if (iv%instid(i)%info%proc_domain(1,n)) &
                nrej_mixsurface = nrej_mixsurface + 1
          end if
-  
+
          !  b.  reject channels 1 and 10 over land/sea-ice/snow
          !------------------------------------------------------
          if (isflg > 0) then
@@ -71,12 +69,12 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
             if (iv%instid(i)%info%proc_domain(1,n)) &
                nrej_windowchanl = nrej_windowchanl + 1
             if (only_sea_rad) iv%instid(i)%tb_qc(:,n)    = qc_bad
-	 end if
+	      end if
 
          ! c. reject limb obs 
          !------------------------------------------------------
          scanpos = iv%instid(i)%scanpos(n)
-         if (scanpos <= 8 .or. scanpos >= 90) then
+         if (scanpos <= 10 .or. scanpos >= 89) then
              iv%instid(i)%tb_qc(:,n)  =  qc_bad
              if (iv%instid(i)%info%proc_domain(1,n)) &
                  nrej_limb = nrej_limb + 1
@@ -86,43 +84,76 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
          ! if (abs(satzen) > 45.0) &
          !    iv%instid(i)%tb_qc(:,n)  =  qc_bad
 
-         !  d. check cloud/precipitation,如果使用rttov_scatt全空同化，将会跳过去云部分
+         !  d. check cloud/precipitation
          !-----------------------------------------------------------
-
-        if (rttov_scatt .eqv. .false.) then
-            if (ob%instid(i)%tb(1,n) > 0.0 .and. ob%instid(i)%tb(10,n) > 0.0 ) then
-                si = ob%instid(i)%tb(1,n)-ob%instid(i)%tb(10,n)
-                if (si >= 4.0) then
-                   iv%instid(i)%tb_qc(:,n) = qc_bad
-                   iv%instid(i)%cloud_flag(:,n) = qc_bad
-                   if (iv%instid(i)%info%proc_domain(1,n)) &
-                      nrej_si = nrej_si + 1
-                end if
-             end if
-        
-
-             if (iv%instid(i)%clwp(n) >= 0.2) then
-                iv%instid(i)%tb_qc(:,n) = qc_bad
-                iv%instid(i)%cloud_flag(:,n) = qc_bad
-                if (iv%instid(i)%info%proc_domain(1,n)) &
-                   nrej_clw = nrej_clw + 1
+         if (ob%instid(i)%tb(1,n) > 0.0 .and. ob%instid(i)%tb(10,n) > 0.0 ) then
+            si = ob%instid(i)%tb(1,n)-ob%instid(i)%tb(10,n)
+            if (si >= 4.0) then
+               iv%instid(i)%tb_qc(:,n) = qc_bad
+               iv%instid(i)%cloud_flag(:,n) = qc_bad
+               if (iv%instid(i)%info%proc_domain(1,n)) &
+                  nrej_si = nrej_si + 1
             end if
-        end if
+         end if
+
+         !!!!! modified based on Qin Zhengkun et al. by Fangdi ！！！！！！！
+         SUMM=0.0
+         Aver=0.0
+         do ii=1,15
+            SUMM=SUMM+ob%instid(i)%tb(ii,n)
+         end do 
+         Aver=SUMM/15
+         
+         Stdd=0.0
+         summ1=0.0
+         do nn=1,15
+            summ1=summ1+(ob%instid(i)%tb(nn,n)-Aver)**2
+         end do   
+         Stdd=sqrt(summ1/15)  
+         Tnorm=(ob%instid(i)%tb(1,n)-Aver)/Stdd
+         Lindex=Tnorm/(((ob%instid(i)%tb(10,n)/100-1)**3)/2)    
+
+         if (Lindex > 0.35) then
+            iv%instid(i)%tb_qc(:,n) = qc_bad
+            if (iv%instid(i)%info%proc_domain(1,n)) &
+               ! nrej_Lindex = nrej_Lindex + 1
+               nrej_clw = nrej_clw + 1
+         end if
+
+         if (iv%instid(i)%clwp(n) >= 0.02) then
+            iv%instid(i)%tb_qc(:,n) = qc_bad
+            iv%instid(i)%cloud_flag(:,n) = qc_bad
+            if (iv%instid(i)%info%proc_domain(1,n)) &
+               nrej_clw = nrej_clw + 1
+         end if
 
          !  e. check surface height/pressure
          !------------------------------------------------------
-         ! sfchgt = ivrad%info(n)%elv
-         ! if (sfchgt >=) then
-         !
-         ! else 
-         ! end if
+         sfchgt = iv%instid(i)%info%elv(n)
+         if (sfchgt >=1500) then
+            iv%instid(i)%tb_qc(11,n) = qc_bad
+            if (iv%instid(i)%info%proc_domain(1,n)) &
+               nrej_sfchgt = nrej_sfchgt + 1
+         end if
+         if (sfchgt >=1000) then
+            iv%instid(i)%tb_qc(12,n) = qc_bad
+            iv%instid(i)%tb_qc(13,n) = qc_bad
+            if (iv%instid(i)%info%proc_domain(1,n)) &
+               nrej_sfchgt = nrej_sfchgt + 1
+         end if
+         if (sfchgt >=800) then
+            iv%instid(i)%tb_qc(14,n) = qc_bad
+            iv%instid(i)%tb_qc(15,n) = qc_bad
+            if (iv%instid(i)%info%proc_domain(1,n)) &
+               nrej_sfchgt = nrej_sfchgt + 1
+         end if
 
 	!!!!! chanel 5 when ps ???? !!!!!
-         if ((isflg .ne. 0) .and. (iv%instid(i)%ps(n) < 800.0)) then
-            iv%instid(i)%tb_qc(15,n)  = qc_bad
-            if (iv%instid(i)%info%proc_domain(1,n)) &
-               nrej_topo = nrej_topo + 1
-         end if
+         ! if ((isflg .ne. 0) .and. (iv%instid(i)%ps(n) < 800.0)) then
+         !    iv%instid(i)%tb_qc(15,n)  = qc_bad
+         !    if (iv%instid(i)%info%proc_domain(1,n)) &
+         !       nrej_topo = nrej_topo + 1
+         ! end if
 
          !  g. check iuse (pre-rejected channels by .info files)
          !------------------------------------------------------
@@ -135,7 +166,7 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
          !-----------------------------------------------------------
          do k = 1, nchan
           ! absolute departure check
-            if (abs(iv%instid(i)%tb_inv(k,n)) > 15.0) then
+            if (abs(iv%instid(i)%tb_inv(k,n)) > 5.0) then
                iv%instid(i)%tb_qc(k,n)  = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_omb_abs(k) = nrej_omb_abs(k) + 1
@@ -166,8 +197,6 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
             end if
          end do ! chan
       end do ! end loop pixel
-      write(*,*)"nrej_si is",nrej_si
-      write(*,*)"nrej_clw is",nrej_clw
 
    ! Do inter-processor communication to gather statistics.
 
@@ -218,6 +247,6 @@ subroutine da_qc_mwhs2 (it, i, nchan, ob, iv)
       call da_free_unit(fgat_rad_unit)
    end if
 
-   if (trace_use) call da_trace_exit("da_qc_mwhs2")
+   if (trace_use) call da_trace_exit("da_qc_mwhs2c")
 
-end subroutine da_qc_mwhs2
+end subroutine da_qc_mwhs2c

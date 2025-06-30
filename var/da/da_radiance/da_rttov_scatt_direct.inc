@@ -202,7 +202,7 @@ subroutine da_rttov_scatt_direct(inst, nchanl, nprofiles, nlevels, &
 
    end do
 
-   !当输入的emissivity值小于等于0时，计算相应的发射率值，在opt%rt_mw%fastem_version中可以选定发射率计算模型，默认为FASTEM6
+   !当输入的emissivity值小于等于0时,计算相应的发射率值,在opt%rt_mw%fastem_version中可以选定发射率计算模型，默认为FASTEM6
    calcemis(:) = emissivity(:)%emis_in <= 0
 
    !-----------------------------------
